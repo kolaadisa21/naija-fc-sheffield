@@ -43,7 +43,7 @@ const STYLES = `
     padding: 40px 16px 100px;
     font-family: 'Barlow', sans-serif; color: #fff;
   }
-  .container { max-width: 860px; margin: 0 auto; }
+  .container { max-width: 700px; margin: 0 auto; }
 
   /* Header */
   .header { margin-bottom: 28px; }
@@ -164,7 +164,16 @@ export default function StatsPage() {
     const [stats, setStats] = useState<Record<Tab, StatRow[]>>({ goals: [], assists: [], yellow: [], red: [], potm: [] })
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => { fetchStats() }, [])
+    useEffect(() => {
+        fetchStats()
+
+        const channel = supabase
+            .channel('stats-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, () => fetchStats())
+            .subscribe()
+
+        return () => { supabase.removeChannel(channel) }
+    }, [])
 
     const fetchStats = async () => {
         const { data: events } = await supabase.from('match_events').select('type, player_id')

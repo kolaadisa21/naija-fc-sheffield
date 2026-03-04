@@ -41,7 +41,7 @@ const STYLES = `
     font-family: 'Barlow', sans-serif;
     color: #fff;
   }
-  .container { max-width: 860px; margin: 0 auto; }
+  .container { max-width: 700px; margin: 0 auto; }
 
   /* Header */
   .header { margin-bottom: 28px; }
@@ -218,7 +218,16 @@ export default function FixturesPage() {
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<FilterType>('all')
 
-    useEffect(() => { fetchFixtures() }, [])
+    useEffect(() => {
+        fetchFixtures()
+
+        const channel = supabase
+            .channel('fixtures-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => fetchFixtures())
+            .subscribe()
+
+        return () => { supabase.removeChannel(channel) }
+    }, [])
 
     const fetchFixtures = async () => {
         const { data: matchesData } = await supabase
