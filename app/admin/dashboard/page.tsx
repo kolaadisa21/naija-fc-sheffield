@@ -46,6 +46,21 @@ const STYLES = `
   }
   .logout-btn:hover { background: rgba(239,68,68,0.15); }
   .content { padding: 24px 16px; max-width: 700px; margin: 0 auto; }
+
+  /* ── Quick links ── */
+  .quick-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
+  .quick-link {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 14px 16px; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .quick-link:hover { background: rgba(255,255,255,0.06); border-color: rgba(34,197,94,0.25); }
+  .quick-link-icon { font-size: 22px; flex-shrink: 0; }
+  .quick-link-text {}
+  .quick-link-title { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; color: #fff; }
+  .quick-link-sub { font-family: 'Barlow', sans-serif; font-size: 11px; color: rgba(255,255,255,0.28); margin-top: 2px; }
+
   .section { margin-bottom: 32px; }
   .section-title {
     font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
@@ -180,25 +195,16 @@ export default function AdminDashboardPage() {
     }
 
     const fetchFixtures = async () => {
-        // Fetch matches
         const { data: matchesData, error } = await supabase
             .from('matches')
             .select('id, home_team_id, away_team_id, match_date, status, home_score, away_score')
             .order('match_date', { ascending: true })
 
-        if (error) {
-            console.error('Error fetching fixtures:', error)
-            return
-        }
+        if (error) { console.error('Error fetching fixtures:', error); return }
 
-        // Fetch all teams
-        const { data: teamsData } = await supabase
-            .from('teams')
-            .select('id, name')
-
+        const { data: teamsData } = await supabase.from('teams').select('id, name')
         if (!matchesData || !teamsData) return
 
-        // Join manually
         const fixtures = matchesData.map((match: any) => ({
             ...match,
             home_team: { name: teamsData.find((t: any) => t.id === match.home_team_id)?.name || 'Unknown' },
@@ -216,10 +222,7 @@ export default function AdminDashboardPage() {
 
     const startMatch = async (fixtureId: string) => {
         setActionLoading(fixtureId)
-        await supabase
-            .from('matches')
-            .update({ status: 'live', home_score: 0, away_score: 0 })
-            .eq('id', fixtureId)
+        await supabase.from('matches').update({ status: 'live', home_score: 0, away_score: 0 }).eq('id', fixtureId)
         await fetchFixtures()
         setActionLoading(null)
         router.push(`/admin/match/${fixtureId}`)
@@ -227,24 +230,15 @@ export default function AdminDashboardPage() {
 
     const endMatch = async (fixtureId: string) => {
         setActionLoading(fixtureId)
-        await supabase
-            .from('matches')
-            .update({ status: 'finished' })
-            .eq('id', fixtureId)
+        await supabase.from('matches').update({ status: 'finished' }).eq('id', fixtureId)
         await fetchFixtures()
         setActionLoading(null)
     }
 
     const resetMatch = async (fixtureId: string) => {
         setActionLoading(fixtureId)
-        await supabase
-            .from('matches')
-            .update({ status: 'scheduled', home_score: 0, away_score: 0 })
-            .eq('id', fixtureId)
-        await supabase
-            .from('match_events')
-            .delete()
-            .eq('match_id', fixtureId)
+        await supabase.from('matches').update({ status: 'scheduled', home_score: 0, away_score: 0 }).eq('id', fixtureId)
+        await supabase.from('match_events').delete().eq('match_id', fixtureId)
         await fetchFixtures()
         setActionLoading(null)
     }
@@ -268,6 +262,25 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="content">
+
+                    {/* ── Quick Links ── */}
+                    <div className="quick-links">
+                        <div className="quick-link" onClick={() => router.push('/admin/players')}>
+                            <div className="quick-link-icon">👤</div>
+                            <div className="quick-link-text">
+                                <div className="quick-link-title">Manage Players</div>
+                                <div className="quick-link-sub">Add, edit, remove players</div>
+                            </div>
+                        </div>
+                        <div className="quick-link" onClick={() => router.push('/admin/fixtures')}>
+                            <div className="quick-link-icon">📅</div>
+                            <div className="quick-link-text">
+                                <div className="quick-link-title">Manage Fixtures</div>
+                                <div className="quick-link-sub">Edit, reschedule matches</div>
+                            </div>
+                        </div>
+                    </div>
+
                     {loading ? (
                         <div className="loading-wrap">
                             <div className="spinner" />
@@ -279,11 +292,7 @@ export default function AdminDashboardPage() {
                                 <div className="section">
                                     <div className="section-title">🔴 Live Now</div>
                                     {grouped.live.map(f => (
-                                        <FixtureCard
-                                            key={f.id}
-                                            fixture={f}
-                                            isLive
-                                            actionLoading={actionLoading}
+                                        <FixtureCard key={f.id} fixture={f} isLive actionLoading={actionLoading}
                                             onManage={() => router.push(`/admin/match/${f.id}`)}
                                             onEnd={() => endMatch(f.id)}
                                             onReset={() => resetMatch(f.id)}
@@ -291,31 +300,23 @@ export default function AdminDashboardPage() {
                                     ))}
                                 </div>
                             )}
-
                             <div className="section">
                                 <div className="section-title">📅 Upcoming Fixtures</div>
                                 {grouped.scheduled.length === 0 ? (
                                     <div className="empty">No upcoming fixtures</div>
                                 ) : (
                                     grouped.scheduled.map(f => (
-                                        <FixtureCard
-                                            key={f.id}
-                                            fixture={f}
-                                            actionLoading={actionLoading}
+                                        <FixtureCard key={f.id} fixture={f} actionLoading={actionLoading}
                                             onStart={() => startMatch(f.id)}
                                         />
                                     ))
                                 )}
                             </div>
-
                             {grouped.finished.length > 0 && (
                                 <div className="section">
                                     <div className="section-title">✅ Results</div>
                                     {grouped.finished.map(f => (
-                                        <FixtureCard
-                                            key={f.id}
-                                            fixture={f}
-                                            actionLoading={actionLoading}
+                                        <FixtureCard key={f.id} fixture={f} actionLoading={actionLoading}
                                             onReset={() => resetMatch(f.id)}
                                         />
                                     ))}

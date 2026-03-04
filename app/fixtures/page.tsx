@@ -41,7 +41,7 @@ const STYLES = `
     font-family: 'Barlow', sans-serif;
     color: #fff;
   }
-  .container { max-width: 700px; margin: 0 auto; }
+  .container { max-width: 860px; margin: 0 auto; }
 
   /* Header */
   .header { margin-bottom: 28px; }
