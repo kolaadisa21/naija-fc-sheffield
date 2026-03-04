@@ -1,0 +1,261 @@
+/* ─────────────────────────────────────────────
+   shared.css  —  Naija FC Sheffield
+   Import this in every public page
+───────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
+
+:root {
+    --green: #22c55e;
+    --green-dark: #16a34a;
+    --green-dim: rgba(34, 197, 94, 0.15);
+    --green-border: rgba(34, 197, 94, 0.25);
+
+    --bg: #080f08;
+    --surface: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.07);
+    --border-soft: rgba(255, 255, 255, 0.04);
+
+    --text: #ffffff;
+    --text-dim: rgba(255, 255, 255, 0.45);
+    --text-muted: rgba(255, 255, 255, 0.22);
+
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-ui: 'Barlow Condensed', sans-serif;
+    --font-body: 'Barlow', sans-serif;
+
+    /* Page spacing */
+    --page-padding-x: 16px;
+    --page-padding-top: 40px;
+    --page-padding-bottom: 100px;
+    --container-max: 860px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+}
+
+/* ── Page wrapper ── */
+.nfc-page {
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 80, 16, 0.38) 0%, transparent 60%);
+    padding: var(--page-padding-top) var(--page-padding-x) var(--page-padding-bottom);
+}
+
+/* ── Container ── */
+.nfc-container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* ── Page header ── */
+.nfc-header {
+    margin-bottom: 32px;
+}
+
+.nfc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 5px 14px 5px 5px;
+    margin-bottom: 16px;
+}
+
+.nfc-badge-dot {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+.nfc-badge-text {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.nfc-title {
+    font-family: var(--font-display);
+    font-size: clamp(44px, 9vw, 80px);
+    line-height: 0.88;
+    color: var(--text);
+    letter-spacing: 0.02em;
+}
+
+.nfc-title-accent {
+    color: var(--green);
+}
+
+.nfc-subtitle {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.nfc-season-tag {
+    display: inline-block;
+    background: var(--green-dim);
+    border: 1px solid var(--green-border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    margin-top: 12px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+}
+
+/* ── Card ── */
+.nfc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+/* ── Loading ── */
+.nfc-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 0;
+    gap: 10px;
+}
+
+.nfc-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid rgba(34, 197, 94, 0.2);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: nfc-spin 0.8s linear infinite;
+}
+
+@keyframes nfc-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.nfc-loading-text {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* ── Empty state ── */
+.nfc-empty {
+    text-align: center;
+    padding: 56px 24px;
+}
+
+.nfc-empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.nfc-empty-text {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* ── Status badges ── */
+.nfc-badge-live {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    animation: nfc-pulse 2s ease infinite;
+}
+
+.nfc-badge-finished {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.nfc-badge-scheduled {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@keyframes nfc-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ── Animations ── */
+.nfc-fade-in {
+    animation: nfc-fadeIn 0.35s ease both;
+}
+
+@keyframes nfc-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
