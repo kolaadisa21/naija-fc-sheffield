@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -54,19 +54,48 @@ function initials(name: string): string {
 }
 
 const TEAM_COLORS = [
-  { bg: 'rgba(239,68,68,0.2)', color: '#f87171' },
+  { bg: 'rgba(239,68,68,0.2)',  color: '#f87171' },
   { bg: 'rgba(59,130,246,0.2)', color: '#60a5fa' },
   { bg: 'rgba(168,85,247,0.2)', color: '#c084fc' },
-  { bg: 'rgba(234,179,8,0.2)', color: '#facc15' },
+  { bg: 'rgba(234,179,8,0.2)',  color: '#facc15' },
   { bg: 'rgba(20,184,166,0.2)', color: '#2dd4bf' },
   { bg: 'rgba(249,115,22,0.2)', color: '#fb923c' },
 ]
+
+function calculateTable(teams: any[], matches: any[]): TeamStats[] {
+  return teams.map((team: any) => {
+    const relevant = matches.filter((m: any) =>
+      (m.status === 'finished' || m.status === 'live') &&
+      (m.home_team_id === team.id || m.away_team_id === team.id)
+    )
+    let wins = 0, draws = 0, losses = 0, goals_for = 0, goals_against = 0
+    relevant.forEach((m: any) => {
+      const isHome = m.home_team_id === team.id
+      const gf = isHome ? m.home_score : m.away_score
+      const ga = isHome ? m.away_score : m.home_score
+      goals_for += gf; goals_against += ga
+      if (gf > ga) wins++
+      else if (gf === ga) draws++
+      else losses++
+    })
+    return {
+      id: team.id, name: team.name,
+      played: relevant.length, wins, draws, losses,
+      goals_for, goals_against,
+      goal_difference: goals_for - goals_against,
+      points: wins * 3 + draws,
+    }
+  }).sort((a: any, b: any) =>
+    b.points - a.points ||
+    b.goal_difference - a.goal_difference ||
+    b.goals_for - a.goals_for
+  )
+}
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ─── Page shell ─── */
   .page {
     min-height: 100vh;
     background: #080f08;
@@ -75,31 +104,9 @@ const STYLES = `
     padding-bottom: 100px;
   }
 
-  /*
-   * ONE container used everywhere.
-   * max-width + auto margins centres it.
-   * padding-left/right gives the gutter.
-   * Every section — hero content, cards, table — sits inside this.
-   */
-  .wrap {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
 
-  /* ─── Hero ─────────────────────────────── */
-  /*
-   * The hero BACKGROUND spans full width via position:absolute.
-   * The CONTENT uses .wrap so it lines up with everything below.
-   */
-  .hero {
-    position: relative;
-    padding-top: 36px;
-    padding-bottom: 40px;
-    overflow: hidden;
-  }
-
-  /* Full-bleed background — sits behind .wrap content */
+  .hero { position: relative; padding-top: 36px; padding-bottom: 40px; overflow: hidden; }
   .hero-bg {
     position: absolute; inset: 0; z-index: 0;
     background:
@@ -112,104 +119,46 @@ const STYLES = `
       repeating-linear-gradient(0deg,  transparent, transparent 40px, #fff 40px, #fff 41px),
       repeating-linear-gradient(90deg, transparent, transparent 40px, #fff 40px, #fff 41px);
   }
-  .hero-7 {
-    position: absolute; right: 0; top: -20px; z-index: 0;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(160px, 28vw, 300px);
-    color: rgba(34,197,94,0.045);
-    line-height: 1; pointer-events: none; user-select: none;
-  }
-
-  /* Hero content inherits .wrap alignment */
+  .hero-7 { position: absolute; right: 0; top: -20px; z-index: 0; font-family: 'Bebas Neue', sans-serif; font-size: clamp(160px, 28vw, 300px); color: rgba(34,197,94,0.045); line-height: 1; pointer-events: none; user-select: none; }
   .hero .wrap { position: relative; z-index: 1; }
 
-  .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25);
-    border-radius: 100px; padding: 5px 14px 5px 8px;
-    margin-bottom: 16px; width: fit-content;
-  }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25); border-radius: 100px; padding: 5px 14px 5px 8px; margin-bottom: 16px; width: fit-content; }
   .eyebrow-dot { width:6px; height:6px; background:#22c55e; border-radius:50%; animation:blink 2s ease infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .eyebrow-text { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#22c55e; }
 
-  .hero-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(54px, 10vw, 96px);
-    line-height: 0.88; letter-spacing: 0.02em; color: #fff;
-    margin-bottom: 10px;
-  }
+  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(54px, 10vw, 96px); line-height: 0.88; letter-spacing: 0.02em; color: #fff; margin-bottom: 10px; }
   .green { color: #22c55e; display: block; }
-
-  .hero-sub {
-    font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600;
-    letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.28);
-    margin-bottom: 22px;
-  }
+  .hero-sub { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom: 22px; }
 
   .ctas { display:flex; gap:10px; flex-wrap:wrap; }
-  .btn-primary {
-    display:inline-flex; align-items:center; gap:8px;
-    background:linear-gradient(135deg,#22c55e,#16a34a); border:none; border-radius:10px;
-    padding:12px 20px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700;
-    letter-spacing:0.06em; text-transform:uppercase; color:#fff; text-decoration:none;
-    transition:opacity 0.2s;
-  }
+  .btn-primary { display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,#22c55e,#16a34a); border:none; border-radius:10px; padding:12px 20px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#fff; text-decoration:none; transition:opacity 0.2s; }
   .btn-primary:hover { opacity:0.88; }
-  .btn-secondary {
-    display:inline-flex; align-items:center; gap:8px;
-    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px;
-    padding:12px 20px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700;
-    letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,255,255,0.55); text-decoration:none;
-    transition:background 0.2s;
-  }
+  .btn-secondary { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:12px 20px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,255,255,0.55); text-decoration:none; transition:background 0.2s; }
   .btn-secondary:hover { background:rgba(255,255,255,0.09); }
 
-  /* ─── Stats strip ───────────────────────── */
-  .stats-strip {
-    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
-    margin-top:28px; margin-bottom:0;
-  }
-  .stat-tile {
-    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
-    border-radius:14px; padding:16px 12px; text-align:center;
-    transition:border-color 0.2s;
-  }
+  .stats-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:28px; margin-bottom:0; }
+  .stat-tile { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:16px 12px; text-align:center; transition:border-color 0.2s; }
   .stat-tile:hover { border-color:rgba(34,197,94,0.2); }
   .stat-icon { font-size:22px; margin-bottom:6px; }
   .stat-val  { font-family:'Bebas Neue',sans-serif; font-size:30px; color:#22c55e; line-height:1; }
   .stat-lbl  { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.22); margin-top:3px; }
 
-  /* ─── Section heads ─────────────────────── */
-  .sec {
-    margin-top: 32px;
-  }
-  .sec-head {
-    display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
-  }
+  .sec { margin-top: 32px; }
+  .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
   .sec-title { font-family:'Bebas Neue',sans-serif; font-size:26px; color:#fff; letter-spacing:0.04em; }
   .sec-link  { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#22c55e; text-decoration:none; }
   .sec-link:hover { opacity:0.8; }
 
-  /* ─── Two-column layout (desktop only) ─── */
   @media (min-width:680px) {
     .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
     .two-col-wide { display:grid; grid-template-columns:1.15fr 0.85fr; gap:20px; align-items:start; }
   }
 
-  /* ─── Live card ─────────────────────────── */
-  .live-card {
-    background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.22);
-    border-radius:14px; padding:16px 18px; position:relative; overflow:hidden;
-  }
+  .live-card { background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.22); border-radius:14px; padding:16px 18px; position:relative; overflow:hidden; }
   .live-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#ef4444,#dc2626); }
   .live-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .live-pill {
-    display:inline-flex; align-items:center; gap:5px;
-    background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3);
-    border-radius:100px; padding:3px 10px;
-    font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; color:#f87171;
-  }
+  .live-pill { display:inline-flex; align-items:center; gap:5px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); border-radius:100px; padding:3px 10px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; color:#f87171; }
   .live-dot  { width:5px; height:5px; background:#f87171; border-radius:50%; animation:blink 1.2s ease infinite; }
   .live-date { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.22); }
   .scoreline { display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -221,26 +170,18 @@ const STYLES = `
   .s-score   { font-family:'Bebas Neue',sans-serif; font-size:52px; color:#fff; line-height:1; min-width:36px; text-align:center; }
   .s-sep     { font-family:'Bebas Neue',sans-serif; font-size:28px; color:rgba(255,255,255,0.2); }
 
-  .no-live {
-    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
-    border-radius:14px; padding:24px; text-align:center;
-  }
+  .no-live { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:24px; text-align:center; }
   .no-live-icon { font-size:28px; margin-bottom:6px; }
   .no-live-txt  { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.18); }
 
-  /* ─── Next fixture ───────────────────────── */
-  .next-card {
-    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
-    border-radius:14px; padding:18px; text-decoration:none; display:block;
-    transition:border-color 0.2s;
-  }
+  .next-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px; text-decoration:none; display:block; transition:border-color 0.2s; }
   .next-card:hover { border-color:rgba(34,197,94,0.2); }
   .next-date  { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#22c55e; margin-bottom:10px; }
   .next-team  { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; color:#fff; letter-spacing:0.02em; }
   .next-vs    { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.1em; color:rgba(255,255,255,0.2); text-transform:uppercase; margin:4px 0; }
   .next-time  { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.25); margin-top:10px; }
 
-  /* ─── Mini table ─────────────────────────── */
+  /* Mini table */
   .mini-table { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; }
   .mt-head { display:grid; grid-template-columns:26px 1fr 28px 28px 36px; padding:10px 12px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05); }
   .mt-hd   { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.2); text-align:center; }
@@ -253,16 +194,21 @@ const STYLES = `
   .mt-row.tp::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#22c55e,#16a34a); }
   .mt-pos  { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; color:rgba(255,255,255,0.2); text-align:center; }
   .mt-pos.g{ color:#fbbf24; }
-  .mt-team { display:flex; align-items:center; gap:6px; min-width:0; }
+  .mt-team { display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; }
   .mt-av   { width:22px; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:9px; flex-shrink:0; }
-  .mt-name { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mt-name { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; }
   .mt-stat { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; color:rgba(255,255,255,0.4); text-align:center; }
   .pts-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; border-radius:4px; font-family:'Bebas Neue',sans-serif; font-size:14px; }
   .pts-c { background:rgba(251,191,36,0.14); color:#fbbf24; border:1px solid rgba(251,191,36,0.25); }
   .pts-t { background:rgba(34,197,94,0.1);   color:#22c55e; border:1px solid rgba(34,197,94,0.2); }
   .pts-n { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.45); border:1px solid rgba(255,255,255,0.08); }
 
-  /* ─── Result cards ───────────────────────── */
+  /* Live badge (mini table) */
+  .mt-live { display:inline-flex; align-items:center; gap:3px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); border-radius:4px; padding:1px 5px; font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.06em; color:#f87171; flex-shrink:0; }
+  .mt-live-dot { width:4px; height:4px; background:#f87171; border-radius:50%; animation:livePulse 1.2s ease infinite; }
+  @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* Result cards */
   .result-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px 16px; margin-bottom:8px; }
   .res-top     { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
   .res-date    { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.07em; color:rgba(255,255,255,0.24); }
@@ -276,25 +222,13 @@ const STYLES = `
   .r-score     { font-family:'Bebas Neue',sans-serif; font-size:28px; color:#fff; line-height:1; min-width:20px; text-align:center; }
   .r-sep       { font-family:'Bebas Neue',sans-serif; font-size:16px; color:rgba(255,255,255,0.2); }
 
-  /* ─── Event ticker ───────────────────────── */
-  .ticker {
-    margin-top: 12px;
-    background: rgba(0,0,0,0.2); border: 1px solid rgba(239,68,68,0.15);
-    border-radius: 10px; overflow: hidden;
-  }
-  .ticker-head {
-    display: flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
-    background: rgba(255,255,255,0.02);
-  }
+  /* Event ticker */
+  .ticker { margin-top: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(239,68,68,0.15); border-radius: 10px; overflow: hidden; }
+  .ticker-head { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); }
   .ticker-head-dot { width:5px; height:5px; background:#f87171; border-radius:50%; animation:blink 1.2s ease infinite; }
   .ticker-head-txt { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); }
   .ticker-empty { padding:12px 14px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.07em; color:rgba(255,255,255,0.18); text-transform:uppercase; }
-  .ticker-event {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
-    animation: slideIn 0.3s ease both;
-  }
+  .ticker-event { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); animation: slideIn 0.3s ease both; }
   .ticker-event:last-child { border-bottom: none; }
   @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
   .ticker-icon { font-size:16px; flex-shrink:0; }
@@ -303,60 +237,71 @@ const STYLES = `
   .ticker-team   { font-family:'Barlow',sans-serif; font-size:11px; color:rgba(255,255,255,0.3); margin-top:1px; }
   .ticker-min    { font-family:'Bebas Neue',sans-serif; font-size:16px; color:rgba(255,255,255,0.25); flex-shrink:0; }
 
-  /* Loading */
   .spin-wrap { display:flex; align-items:center; justify-content:center; padding:28px 0; }
   .spinner   { width:24px; height:24px; border:2px solid rgba(34,197,94,0.2); border-top-color:#22c55e; border-radius:50%; animation:spin 0.8s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg)} }
 `
+
 export default function HomePage() {
-  const [liveMatch, setLiveMatch] = useState<Match | null>(null)
-  const [nextFixture, setNextFixture] = useState<Match | null>(null)
+  const [liveMatch, setLiveMatch]         = useState<Match | null>(null)
+  const [nextFixture, setNextFixture]     = useState<Match | null>(null)
   const [recentResults, setRecentResults] = useState<Match[]>([])
-  const [table, setTable] = useState<TeamStats[]>([])
-  const [loading, setLoading] = useState(true)
-  const [goals, setGoals] = useState(0)
-  const [played, setPlayed] = useState(0)
-  const [liveEvents, setLiveEvents] = useState<MatchEvent[]>([])
+  const [table, setTable]                 = useState<TeamStats[]>([])
+  const [loading, setLoading]             = useState(true)
+  const [goals, setGoals]                 = useState(0)
+  const [played, setPlayed]               = useState(0)
+  const [liveEvents, setLiveEvents]       = useState<MatchEvent[]>([])
+  const [liveTeamIds, setLiveTeamIds]     = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    fetchAll()
+  const teamsRef = useRef<any[]>([])
 
-    const channel = supabase
-      .channel('home-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => fetchAll())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, () => fetchAll())
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  const fetchAll = async () => {
-    const [{ data: teams }, { data: matches }, { data: tableData }, { count: goalCount }] = await Promise.all([
-      supabase.from('teams').select('id, name'),
-      supabase.from('matches').select('id,home_team_id,away_team_id,match_date,status,home_score,away_score').order('match_date', { ascending: true }),
-      supabase.from('league_table').select('*'),
-      supabase.from('match_events').select('*', { count: 'exact', head: true }).eq('type', 'goal'),
-    ])
-
-    if (!matches || !teams) { setLoading(false); return }
-
+  const processMatches = (teams: any[], matches: any[]) => {
     const withTeams = matches.map((m: any) => ({
       ...m,
       home_team: { name: teams.find((t: any) => t.id === m.home_team_id)?.name || 'Unknown' },
       away_team: { name: teams.find((t: any) => t.id === m.away_team_id)?.name || 'Unknown' },
     }))
-
-    const live = withTeams.find(m => m.status === 'live') || null
+    const live = withTeams.find((m: any) => m.status === 'live') || null
     setLiveMatch(live)
+    setLiveTeamIds(new Set(live ? [live.home_team_id, live.away_team_id] : []))
+    setNextFixture(withTeams.find((m: any) => m.status === 'scheduled') || null)
+    setRecentResults(withTeams.filter((m: any) => m.status === 'finished').reverse().slice(0, 3))
+    setTable(calculateTable(teams, matches).slice(0, 6))
+    setPlayed(withTeams.filter((m: any) => m.status === 'finished').length)
     if (live) fetchLiveEvents(live.id)
     else setLiveEvents([])
-    setNextFixture(withTeams.find(m => m.status === 'scheduled') || null)
-    setRecentResults(withTeams.filter(m => m.status === 'finished').reverse().slice(0, 3))
-    setTable((tableData || []).slice(0, 6))
-    setGoals(goalCount || 0)
-    setPlayed(withTeams.filter(m => m.status === 'finished').length)
-    setLoading(false)
   }
+
+  useEffect(() => {
+    // Initial full load
+    const init = async () => {
+      const [{ data: teams }, { data: matches }, { count: goalCount }] = await Promise.all([
+        supabase.from('teams').select('id, name'),
+        supabase.from('matches').select('id,home_team_id,away_team_id,match_date,status,home_score,away_score').order('match_date', { ascending: true }),
+        supabase.from('match_events').select('*', { count: 'exact', head: true }).eq('type', 'goal'),
+      ])
+      if (!teams || !matches) { setLoading(false); return }
+      teamsRef.current = teams
+      setGoals(goalCount || 0)
+      processMatches(teams, matches)
+      setLoading(false)
+    }
+    init()
+
+    // Poll every 5 seconds for live updates
+    const interval = setInterval(async () => {
+      if (!teamsRef.current.length) return
+      const [{ data: matches }, { count: goalCount }] = await Promise.all([
+        supabase.from('matches').select('id,home_team_id,away_team_id,match_date,status,home_score,away_score').order('match_date', { ascending: true }),
+        supabase.from('match_events').select('*', { count: 'exact', head: true }).eq('type', 'goal'),
+      ])
+      if (!matches) return
+      setGoals(goalCount || 0)
+      processMatches(teamsRef.current, matches)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const fetchLiveEvents = async (matchId: string) => {
     const { data: events } = await supabase
@@ -365,44 +310,33 @@ export default function HomePage() {
       .eq('match_id', matchId)
       .order('created_at', { ascending: false })
       .limit(8)
-
     const { data: players } = await supabase.from('players').select('id, name, team_id')
-    const { data: teams } = await supabase.from('teams').select('id, name')
-
+    const { data: teams }   = await supabase.from('teams').select('id, name')
     if (!events || !players || !teams) return
-
-    const enriched = events.map((e: any) => {
+    setLiveEvents(events.map((e: any) => {
       const p = players.find((p: any) => p.id === e.player_id)
       const t = teams.find((t: any) => t.id === p?.team_id)
-      return {
-        id: e.id,
-        type: e.type,
-        minute: e.minute,
-        player_name: p?.name || 'Unknown',
-        team_name: t?.name || '',
-      }
-    })
-    setLiveEvents(enriched)
+      return { id: e.id, type: e.type, minute: e.minute, player_name: p?.name || 'Unknown', team_name: t?.name || '' }
+    }))
   }
 
   const eventIcon = (type: string) => {
-    if (type === 'goal') return '⚽'
+    if (type === 'goal')   return '⚽'
     if (type === 'assist') return '🅰️'
     if (type === 'yellow') return '🟨'
-    if (type === 'red') return '🟥'
-    if (type === 'potm') return '⭐'
+    if (type === 'red')    return '🟥'
+    if (type === 'potm')   return '⭐'
     return '•'
   }
 
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const fmt     = (d: string) => new Date(d).toLocaleDateString('en-GB',  { weekday:'short', day:'numeric', month:'short' })
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-GB',  { hour:'2-digit', minute:'2-digit' })
 
   return (
     <>
       <style>{STYLES}</style>
       <div className="page">
 
-        {/* ── HERO ── full-bleed bg, content in .wrap ── */}
         <div className="hero">
           <div className="hero-bg" />
           <div className="hero-grid" />
@@ -419,16 +353,14 @@ export default function HomePage() {
             </h1>
             <p className="hero-sub">7-a-side · 6 Teams · Live Scores</p>
             <div className="ctas">
-              <Link href="/table" className="btn-primary">📊 View Table</Link>
+              <Link href="/table"    className="btn-primary">📊 View Table</Link>
               <Link href="/fixtures" className="btn-secondary">📅 Fixtures</Link>
             </div>
-
-            {/* Stats strip — inside hero so same gutter */}
             <div className="stats-strip">
               {[
-                { icon: '⚽', val: loading ? '-' : goals, lbl: 'Goals' },
+                { icon: '⚽', val: loading ? '-' : goals,  lbl: 'Goals'  },
                 { icon: '🏟️', val: loading ? '-' : played, lbl: 'Played' },
-                { icon: '👥', val: 6, lbl: 'Teams' },
+                { icon: '👥', val: 6,                       lbl: 'Teams'  },
               ].map(s => (
                 <div key={s.lbl} className="stat-tile">
                   <div className="stat-icon">{s.icon}</div>
@@ -440,10 +372,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ── BODY — all sections use the same .wrap ── */}
         <div className="wrap">
 
-          {/* Live + Next — side by side desktop */}
           <div className="two-col">
             <div className="sec">
               <div className="sec-head">
@@ -474,7 +404,6 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Event ticker — only visible during a live match */}
               {liveMatch && (
                 <div className="ticker">
                   <div className="ticker-head">
@@ -516,7 +445,6 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Table + Results — side by side desktop */}
           <div className="two-col-wide">
             <div className="sec">
               <div className="sec-head">
@@ -535,22 +463,26 @@ export default function HomePage() {
                     <div className="mt-hd">PTS</div>
                   </div>
                   {table.map((team, i) => {
-                    const c = TEAM_COLORS[i % 6]
+                    const c  = TEAM_COLORS[i % 6]
                     const gd = team.goal_difference
                     const rc = i === 0 ? 'mt-row ch' : i <= 2 ? 'mt-row tp' : 'mt-row'
                     const pc = i === 0 ? 'pts-badge pts-c' : i <= 2 ? 'pts-badge pts-t' : 'pts-badge pts-n'
+                    const isLive = liveTeamIds.has(team.id)
                     return (
                       <div key={team.id} className={rc}>
-                        <div className={`mt-pos${i === 0 ? ' g' : ''}`}>{i === 0 ? '👑' : i + 1}</div>
+                        <div className={`mt-pos${i===0?' g':''}`}>{i===0?'👑':i+1}</div>
                         <div className="mt-team">
-                          <div className="mt-av" style={{ background: c.bg, color: c.color }}>{initials(team.name)}</div>
+                          <div className="mt-av" style={{ background:c.bg, color:c.color }}>{initials(team.name)}</div>
                           <span className="mt-name">{shortName(team.name)}</span>
+                          {isLive && (
+                            <span className="mt-live"><div className="mt-live-dot" />LIVE</span>
+                          )}
                         </div>
                         <div className="mt-stat">{team.wins}</div>
-                        <div className="mt-stat" style={{ color: gd > 0 ? '#22c55e' : gd < 0 ? '#f87171' : 'rgba(255,255,255,0.3)' }}>
-                          {gd > 0 ? `+${gd}` : gd}
+                        <div className="mt-stat" style={{ color: gd>0?'#22c55e':gd<0?'#f87171':'rgba(255,255,255,0.3)' }}>
+                          {gd>0?`+${gd}`:gd}
                         </div>
-                        <div style={{ textAlign: 'center' }}><span className={pc}>{team.points}</span></div>
+                        <div style={{ textAlign:'center' }}><span className={pc}>{team.points}</span></div>
                       </div>
                     )
                   })}
@@ -573,13 +505,13 @@ export default function HomePage() {
                         <span className="res-date">{fmt(m.match_date)}</span>
                       </div>
                       <div className="res-line">
-                        <div className={`r-name home${hw ? ' win' : aw ? ' lose' : ''}`}>{shortName(m.home_team.name)}</div>
+                        <div className={`r-name home${hw?' win':aw?' lose':''}`}>{shortName(m.home_team.name)}</div>
                         <div className="r-scores">
                           <span className="r-score">{m.home_score}</span>
                           <span className="r-sep">-</span>
                           <span className="r-score">{m.away_score}</span>
                         </div>
-                        <div className={`r-name away${aw ? ' win' : hw ? ' lose' : ''}`}>{shortName(m.away_team.name)}</div>
+                        <div className={`r-name away${aw?' win':hw?' lose':''}`}>{shortName(m.away_team.name)}</div>
                       </div>
                     </div>
                   )
