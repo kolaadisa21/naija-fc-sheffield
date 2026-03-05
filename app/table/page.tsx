@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from '@/lib/supabase'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 
 type TeamStats = {
@@ -17,7 +17,6 @@ type TeamStats = {
   points: number
 }
 
-// Shorten long team names for mobile
 function shortName(name: string): string {
   const map: Record<string, string> = {
     'HILLSBOROUGH WANDERERS': 'Hillsborough',
@@ -57,7 +56,6 @@ const STYLES = `
 
   .container { max-width: 860px; margin: 0 auto; }
 
-  /* ── Header ── */
   .header { margin-bottom: 32px; }
 
   .league-badge {
@@ -92,17 +90,14 @@ const STYLES = `
     letter-spacing: 0.12em; text-transform: uppercase; color: #22c55e;
   }
 
-  /* ── Table card ── */
   .table-card {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 14px; overflow: hidden;
   }
 
-  /* ── Desktop columns: # | Team | P | W | D | L | GF | GA | GD | PTS ── */
   .col-def { grid-template-columns: 36px 1fr 38px 38px 38px 38px 42px 42px 46px 52px; }
 
-  /* ── Mobile columns: # | Team | P | W | L | GD | PTS ── (hide D, GF, GA) */
   @media (max-width: 600px) {
     .col-def { grid-template-columns: 28px 1fr 32px 32px 32px 38px 44px; }
     .hide-mobile { display: none !important; }
@@ -135,44 +130,20 @@ const STYLES = `
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* Row highlights */
-  .row-champ {
-    background: linear-gradient(90deg, rgba(251,191,36,0.08) 0%, transparent 55%);
-  }
-  .row-champ::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px; background: linear-gradient(180deg, #fbbf24, #f59e0b);
-  }
-  .row-top {
-    background: linear-gradient(90deg, rgba(34,197,94,0.06) 0%, transparent 55%);
-  }
-  .row-top::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px; background: linear-gradient(180deg, #22c55e, #16a34a);
-  }
+  .row-champ { background: linear-gradient(90deg, rgba(251,191,36,0.08) 0%, transparent 55%); }
+  .row-champ::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  .row-top { background: linear-gradient(90deg, rgba(34,197,94,0.06) 0%, transparent 55%); }
+  .row-top::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #22c55e, #16a34a); }
 
-  /* Cells */
-  .cell-pos {
-    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
-    color: rgba(255,255,255,0.2); text-align: center;
-  }
+  .cell-pos { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.2); text-align: center; }
   .cell-pos.champ { color: #fbbf24; }
 
   .cell-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
-  .team-avatar {
-    width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 0.02em;
-  }
+  .team-avatar { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 0.02em; }
 
-  .team-name-full {
-    font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
-    color: #fff; letter-spacing: 0.02em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
+  .team-name-full { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Show short name on mobile, full on desktop */
   .name-desktop { display: block; }
   .name-mobile { display: none; }
   @media (max-width: 600px) {
@@ -180,46 +151,28 @@ const STYLES = `
     .name-mobile { display: block; }
   }
 
-  .cell-stat {
-    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600;
-    color: rgba(255,255,255,0.45); text-align: center;
-  }
+  .cell-stat { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.45); text-align: center; }
   .cell-stat.bright { color: rgba(255,255,255,0.75); }
   .gd-pos { color: #22c55e !important; }
   .gd-neg { color: #f87171 !important; }
   .gd-zero { color: rgba(255,255,255,0.2) !important; }
 
   .cell-pts { text-align: center; }
-  .pts-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 34px; height: 26px; border-radius: 6px;
-    font-family: 'Bebas Neue', sans-serif; font-size: 17px;
-  }
+  .pts-badge { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 26px; border-radius: 6px; font-family: 'Bebas Neue', sans-serif; font-size: 17px; }
   .pts-champ { background: rgba(251,191,36,0.14); color: #fbbf24; border: 1px solid rgba(251,191,36,0.28); }
   .pts-top   { background: rgba(34,197,94,0.1);  color: #22c55e; border: 1px solid rgba(34,197,94,0.22); }
   .pts-norm  { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.08); }
 
-  /* Legend */
   .legend { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
-  .legend-item {
-    display: flex; align-items: center; gap: 6px;
-    font-family: 'Barlow', sans-serif; font-size: 11px; color: rgba(255,255,255,0.25);
-  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-family: 'Barlow', sans-serif; font-size: 11px; color: rgba(255,255,255,0.25); }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
 
-  /* Loading */
   .loading-wrap { display: flex; align-items: center; justify-content: center; padding: 64px 0; gap: 10px; }
   .spinner { width: 28px; height: 28px; border: 2px solid rgba(34,197,94,0.2); border-top-color: #22c55e; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.2); }
 
-  /* Mobile helper label */
-  .mobile-note {
-    display: none;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.15);
-    text-align: right; margin-bottom: 8px;
-  }
+  .mobile-note { display: none; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.15); text-align: right; margin-bottom: 8px; }
   @media (max-width: 600px) { .mobile-note { display: block; } }
 `
 
@@ -227,14 +180,25 @@ export default function LeagueTablePage() {
   const [teams, setTeams] = useState<TeamStats[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { fetchLeagueTable() }, [])
-
-  const fetchLeagueTable = async () => {
+  // useCallback so the same function reference is used inside useEffect
+  const fetchLeagueTable = useCallback(async () => {
     const { data, error } = await supabase.from('league_table').select('*')
     if (error) { console.error(error); return }
     setTeams(data || [])
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchLeagueTable()
+
+    const channel = supabase
+      .channel('table-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => fetchLeagueTable())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, () => fetchLeagueTable())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [fetchLeagueTable])
 
   return (
     <>
@@ -242,7 +206,6 @@ export default function LeagueTablePage() {
       <div className="page">
         <div className="container">
 
-          {/* Header */}
           <div className="header">
             <div className="league-badge">
               <div className="badge-dot">⚽</div>
@@ -253,13 +216,9 @@ export default function LeagueTablePage() {
             <div className="season-tag">⚡ Season 1 · 2026</div>
           </div>
 
-          {/* Mobile hint */}
           <p className="mobile-note">Showing: P · W · L · GD · PTS</p>
 
-          {/* Table */}
           <div className="table-card">
-
-            {/* Column headers */}
             <div className="col-headers col-def">
               <div className="col-hd">#</div>
               <div className="col-hd left">Team</div>
@@ -289,12 +248,9 @@ export default function LeagueTablePage() {
 
                 return (
                   <div key={team.id} className={rowClass} style={{ animationDelay: `${i * 55}ms` }}>
-                    {/* Position */}
                     <div className={`cell-pos${i === 0 ? ' champ' : ''}`}>
                       {i === 0 ? '👑' : i + 1}
                     </div>
-
-                    {/* Team */}
                     <div className="cell-team">
                       <div className="team-avatar" style={{ background: color.bg, color: color.color }}>
                         {initials(team.name)}
@@ -304,8 +260,6 @@ export default function LeagueTablePage() {
                         <span className="name-mobile">{shortName(team.name)}</span>
                       </Link>
                     </div>
-
-                    {/* Stats */}
                     <div className="cell-stat bright">{team.played}</div>
                     <div className="cell-stat bright">{team.wins}</div>
                     <div className="cell-stat hide-mobile">{team.draws}</div>
@@ -313,8 +267,6 @@ export default function LeagueTablePage() {
                     <div className="cell-stat hide-mobile">{team.goals_for}</div>
                     <div className="cell-stat hide-mobile">{team.goals_against}</div>
                     <div className={gdClass}>{gdStr}</div>
-
-                    {/* Points */}
                     <div className="cell-pts">
                       <span className={ptsClass}>{team.points}</span>
                     </div>
@@ -324,7 +276,6 @@ export default function LeagueTablePage() {
             )}
           </div>
 
-          {/* Legend */}
           <div className="legend">
             <div className="legend-item">
               <div className="legend-dot" style={{ background: '#fbbf24' }} />
