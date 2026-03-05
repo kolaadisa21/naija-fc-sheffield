@@ -124,20 +124,44 @@ const STYLES = `
   .section { margin-bottom:20px; }
   .section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.04em; color:#fff; margin-bottom:12px; }
 
-  /* Events timeline */
+  /* Events timeline — 3-col grid: left (home) | centre (minute) | right (away) */
   .events-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; }
-  .event-row { display:flex; align-items:center; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.04); gap:12px; transition:background 0.1s; }
+  .event-row {
+    display:grid;
+    grid-template-columns: 1fr 48px 1fr;
+    align-items:center;
+    padding:10px 14px;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    transition:background 0.1s;
+    gap:4px;
+  }
   .event-row:last-child { border-bottom:none; }
   .event-row:hover { background:rgba(255,255,255,0.03); }
-  .event-row.home-event { flex-direction:row; }
-  .event-row.away-event { flex-direction:row-reverse; }
-  .event-icon { font-size:18px; flex-shrink:0; }
-  .event-info { flex:1; }
-  .event-info.away { text-align:right; }
+
+  /* Centre minute bubble */
+  .event-min-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .event-min {
+    font-family:'Bebas Neue',sans-serif; font-size:15px; line-height:1;
+    color:#fff;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+    border-radius:6px; padding:3px 6px; min-width:34px; text-align:center;
+  }
+  .event-min-line { width:1px; height:100%; background:rgba(255,255,255,0.06); }
+
+  /* Home side (left column) */
+  .event-home { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  .event-home .event-info { text-align:right; }
+
+  /* Away side (right column) */
+  .event-away { display:flex; align-items:center; gap:8px; justify-content:flex-start; }
+  .event-away .event-info { text-align:left; }
+
+  /* Empty placeholder when event is on the other side */
+  .event-side-empty { display:block; }
+
+  .event-icon { font-size:18px; flex-shrink:0; line-height:1; }
   .event-player { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; color:#fff; letter-spacing:0.02em; }
-  .event-type { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.3); margin-top:1px; }
-  .event-min { font-family:'Bebas Neue',sans-serif; font-size:18px; color:rgba(255,255,255,0.2); flex-shrink:0; min-width:32px; text-align:center; }
-  .event-team-tag { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.08em; padding:2px 7px; border-radius:4px; background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.3); flex-shrink:0; }
+  .event-type { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.05em; color:rgba(255,255,255,0.28); margin-top:1px; }
   .no-events { padding:28px; text-align:center; font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.18); }
 
   /* Squad lists */
@@ -371,13 +395,37 @@ export default function MatchPage() {
                       matchEvents.map(e => {
                         const isHome = e.team_id === match.home_team.id
                         return (
-                          <div key={e.id} className={`event-row ${isHome ? 'home-event' : 'away-event'}`}>
-                            <div className="event-icon">{eventIcon(e.type)}</div>
-                            <div className={`event-info${isHome ? '' : ' away'}`}>
-                              <div className="event-player">{e.player_name}</div>
-                              <div className="event-type">{eventLabel(e.type)} · {isHome ? shortName(match.home_team.name) : shortName(match.away_team.name)}</div>
+                          <div key={e.id} className="event-row">
+                            {/* Left: home event */}
+                            {isHome ? (
+                              <div className="event-home">
+                                <div className="event-info">
+                                  <div className="event-player">{e.player_name}</div>
+                                  <div className="event-type">{eventLabel(e.type)}</div>
+                                </div>
+                                <div className="event-icon">{eventIcon(e.type)}</div>
+                              </div>
+                            ) : (
+                              <div className="event-side-empty" />
+                            )}
+
+                            {/* Centre: minute */}
+                            <div className="event-min-wrap">
+                              <div className="event-min">{e.minute ?? '—'}&apos;</div>
                             </div>
-                            {e.minute && <div className="event-min">{e.minute}'</div>}
+
+                            {/* Right: away event */}
+                            {!isHome ? (
+                              <div className="event-away">
+                                <div className="event-icon">{eventIcon(e.type)}</div>
+                                <div className="event-info">
+                                  <div className="event-player">{e.player_name}</div>
+                                  <div className="event-type">{eventLabel(e.type)}</div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="event-side-empty" />
+                            )}
                           </div>
                         )
                       })
