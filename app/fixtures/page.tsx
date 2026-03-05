@@ -16,6 +16,7 @@ type Fixture = {
     away_team: { name: string }
 }
 
+type Team = { id: string; name: string }
 type FilterType = 'all' | 'scheduled' | 'live' | 'finished'
 
 function shortName(name: string): string {
@@ -42,66 +43,43 @@ const STYLES = `
     font-family: 'Barlow', sans-serif;
     color: #fff;
   }
-  .container { max-width: 700px; margin: 0 auto; }
+  .container { max-width: 860px; margin: 0 auto; }
 
   /* Header */
   .header { margin-bottom: 28px; }
-  .league-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 100px; padding: 5px 14px 5px 5px; margin-bottom: 16px;
-  }
-  .badge-dot {
-    width: 26px; height: 26px; background: linear-gradient(135deg,#22c55e,#16a34a);
-    border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:13px;
-  }
-  .badge-text {
-    font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600;
-    letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.4);
-  }
-  .title {
-    font-family:'Bebas Neue',sans-serif;
-    font-size:clamp(44px,9vw,80px); line-height:0.88; letter-spacing:0.02em; color:#fff;
-  }
+  .league-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 100px; padding: 5px 14px 5px 5px; margin-bottom: 16px; }
+  .badge-dot { width: 26px; height: 26px; background: linear-gradient(135deg,#22c55e,#16a34a); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .badge-text { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.4); }
+  .title { font-family:'Bebas Neue',sans-serif; font-size:clamp(44px,9vw,80px); line-height:0.88; letter-spacing:0.02em; color:#fff; }
   .title-accent { color:#22c55e; }
-  .subtitle {
-    font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600;
-    letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.25); margin-top:8px;
-  }
+  .subtitle { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.25); margin-top:8px; }
 
   /* Filter tabs */
-  .filter-tabs { display:flex; gap:6px; margin-bottom:24px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+  .filter-tabs { display:flex; gap:6px; margin-bottom:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
   .filter-tabs::-webkit-scrollbar { display:none; }
-  .filter-tab {
-    flex-shrink:0; padding:8px 16px; border-radius:100px; border:none; cursor:pointer;
-    font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700;
-    letter-spacing:0.08em; text-transform:uppercase; transition:all 0.15s;
-    background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.35);
-    border:1px solid rgba(255,255,255,0.08); white-space:nowrap;
-  }
+  .filter-tab { flex-shrink:0; padding:8px 16px; border-radius:100px; border:none; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; transition:all 0.15s; background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.35); border:1px solid rgba(255,255,255,0.08); white-space:nowrap; }
   .filter-tab.active { background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3); }
+
+  /* Team filter */
+  .team-filter { display:flex; gap:6px; margin-bottom:24px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+  .team-filter::-webkit-scrollbar { display:none; }
+  .team-tab { flex-shrink:0; padding:6px 14px; border-radius:100px; border:none; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; transition:all 0.15s; background:rgba(255,255,255,0.03); color:rgba(255,255,255,0.25); border:1px solid rgba(255,255,255,0.06); white-space:nowrap; }
+  .team-tab.active { background:rgba(59,130,246,0.15); color:#60a5fa; border-color:rgba(59,130,246,0.3); }
+  .team-filter-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.15); align-self:center; flex-shrink:0; }
 
   /* Month group */
   .month-group { margin-bottom:28px; }
-  .month-label {
-    font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
-    letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.2);
-    margin-bottom:8px; padding-left:2px;
-    display:flex; align-items:center; gap:10px;
-  }
+  .month-label { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.2); margin-bottom:8px; padding-left:2px; display:flex; align-items:center; gap:10px; }
   .month-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.05); }
 
   /* Fixture card */
-  .fixture-card {
-    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
-    border-radius:14px; padding:14px 16px; margin-bottom:8px;
-    position:relative; transition:background 0.15s;
-  }
-  .fixture-card:hover { background:rgba(255,255,255,0.05); }
+  .fixture-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 16px; margin-bottom:8px; position:relative; transition:all 0.15s; display:block; text-decoration:none; color:inherit; }
+  .fixture-card:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.12); transform:translateY(-1px); }
   .fixture-card.live { border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.04); }
+  .fixture-card.live:hover { background:rgba(239,68,68,0.08); }
   .fixture-card.live::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#ef4444; border-radius:2px 0 0 2px; }
 
-  /* Top row: date + badge */
+  /* Top row */
   .card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
   .card-date { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; color:rgba(255,255,255,0.28); }
 
@@ -112,23 +90,13 @@ const STYLES = `
   .badge-scheduled { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.28); border:1px solid rgba(255,255,255,0.08); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-  /* Scoreline row */
-  .scoreline {
-    display:grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items:center;
-    gap:8px;
-  }
-  .team-name {
-    font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700;
-    color:#fff; letter-spacing:0.02em; line-height:1.2;
-  }
+  /* Scoreline */
+  .scoreline { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; }
+  .team-name { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; color:#fff; letter-spacing:0.02em; line-height:1.2; }
   .team-name.home { text-align:left; }
   .team-name.away { text-align:right; }
   .team-name.winner { color:#22c55e; }
-  .team-name.loser { color:rgba(255,255,255,0.3); }
-
-  /* Show short name on mobile */
+  .team-name.loser  { color:rgba(255,255,255,0.3); }
   .name-long { display:inline; }
   .name-short { display:none; }
   @media (max-width:520px) {
@@ -143,23 +111,58 @@ const STYLES = `
   .score-vs { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.1em; color:rgba(255,255,255,0.2); padding:0 6px; }
 
   /* Result tag */
-  .result-tag { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); }
+  .result-tag { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; }
   .result-pill { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.06em; padding:3px 8px; border-radius:4px; }
   .r-home { background:rgba(34,197,94,0.12); color:#22c55e; }
   .r-away { background:rgba(59,130,246,0.12); color:#60a5fa; }
   .r-draw { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.3); }
+  .tap-hint { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.15); }
 
   /* Empty */
   .empty { text-align:center; padding:48px 24px; }
   .empty-icon { font-size:40px; margin-bottom:10px; }
   .empty-text { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.18); }
 
-  /* Loading */
-  .loading-wrap { display:flex; align-items:center; justify-content:center; padding:64px 0; gap:10px; }
-  .spinner { width:28px; height:28px; border:2px solid rgba(34,197,94,0.2); border-top-color:#22c55e; border-radius:50%; animation:spin 0.8s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .loading-text { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.2); }
+  /* ── Skeleton loader ── */
+  @keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+  }
+  .skeleton-base {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 6px;
+  }
+  .skeleton-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+  }
+  .skeleton-top { display:flex; justify-content:space-between; margin-bottom:14px; }
+  .skeleton-date { height:12px; width:140px; }
+  .skeleton-badge { height:12px; width:60px; border-radius:100px; }
+  .skeleton-scoreline { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
+  .skeleton-team-h { height:16px; width:80%; }
+  .skeleton-team-a { height:16px; width:70%; margin-left:auto; }
+  .skeleton-score { height:30px; width:60px; border-radius:4px; }
+  .skeleton-month { height:11px; width:80px; margin-bottom:12px; }
 `
+
+function SkeletonCard() {
+    return (
+        <div className="skeleton-card">
+            <div className="skeleton-top">
+                <div className="skeleton-base skeleton-date" />
+                <div className="skeleton-base skeleton-badge" />
+            </div>
+            <div className="skeleton-scoreline">
+                <div className="skeleton-base skeleton-team-h" />
+                <div className="skeleton-base skeleton-score" />
+                <div className="skeleton-base skeleton-team-a" />
+            </div>
+        </div>
+    )
+}
 
 function FixtureCard({ fixture }: { fixture: Fixture }) {
     const date = new Date(fixture.match_date)
@@ -171,20 +174,19 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
     const awayWin = isFinished && fixture.home_score < fixture.away_score
 
     return (
-        <div className={`fixture-card${isLive ? ' live' : ''}`}>
+        <Link href={`/matches/${fixture.id}`} className={`fixture-card${isLive ? ' live' : ''}`}>
             <div className="card-top">
                 <span className="card-date">{dateStr} · {timeStr}</span>
-                {isLive && <span className="badge badge-live">🔴 Live</span>}
+                {isLive     && <span className="badge badge-live">🔴 Live</span>}
                 {isFinished && <span className="badge badge-finished">✅ Result</span>}
                 {fixture.status === 'scheduled' && <span className="badge badge-scheduled">🕐 Upcoming</span>}
             </div>
 
             <div className="scoreline">
-                <Link href={`/teams/${fixture.home_team_id}`} className={`team-name home${homeWin ? ' winner' : awayWin ? ' loser' : ''}`} style={{ textDecoration: 'none' }}>
+                <div className={`team-name home${homeWin ? ' winner' : awayWin ? ' loser' : ''}`}>
                     <span className="name-long">{fixture.home_team.name}</span>
                     <span className="name-short">{shortName(fixture.home_team.name)}</span>
-                </Link>
-
+                </div>
                 <div className="score-box">
                     {(isFinished || isLive) ? (
                         <>
@@ -196,60 +198,68 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
                         <span className="score-vs">vs</span>
                     )}
                 </div>
-
-                <Link href={`/teams/${fixture.away_team_id}`} className={`team-name away${awayWin ? ' winner' : homeWin ? ' loser' : ''}`} style={{ textDecoration: 'none' }}>
+                <div className={`team-name away${awayWin ? ' winner' : homeWin ? ' loser' : ''}`}>
                     <span className="name-long">{fixture.away_team.name}</span>
                     <span className="name-short">{shortName(fixture.away_team.name)}</span>
-                </Link>
+                </div>
             </div>
 
             {isFinished && (
                 <div className="result-tag">
-                    {homeWin && <span className="result-pill r-home">Home Win</span>}
-                    {awayWin && <span className="result-pill r-away">Away Win</span>}
+                    {homeWin  && <span className="result-pill r-home">Home Win</span>}
+                    {awayWin  && <span className="result-pill r-away">Away Win</span>}
                     {!homeWin && !awayWin && <span className="result-pill r-draw">Draw</span>}
+                    <span className="tap-hint">Tap for details →</span>
                 </div>
             )}
-        </div>
+            {isLive && (
+                <div className="result-tag">
+                    <span className="result-pill" style={{ background:'rgba(239,68,68,0.1)', color:'#f87171' }}>In progress</span>
+                    <span className="tap-hint">Tap to follow live →</span>
+                </div>
+            )}
+        </Link>
     )
 }
 
 export default function FixturesPage() {
-    const [fixtures, setFixtures] = useState<Fixture[]>([])
-    const [loading, setLoading] = useState(true)
-    const [filter, setFilter] = useState<FilterType>('all')
+    const [fixtures, setFixtures]   = useState<Fixture[]>([])
+    const [teams, setTeams]         = useState<Team[]>([])
+    const [loading, setLoading]     = useState(true)
+    const [filter, setFilter]       = useState<FilterType>('all')
+    const [teamFilter, setTeamFilter] = useState<string>('all')
 
     useEffect(() => {
         fetchFixtures()
-
         const channel = supabase
             .channel('fixtures-realtime')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => fetchFixtures())
             .subscribe()
-
         return () => { supabase.removeChannel(channel) }
     }, [])
 
     const fetchFixtures = async () => {
-        const { data: matchesData } = await supabase
-            .from('matches')
-            .select('id, home_team_id, away_team_id, match_date, status, home_score, away_score')
-            .order('match_date', { ascending: true })
-
-        const { data: teamsData } = await supabase.from('teams').select('id, name')
+        const [{ data: matchesData }, { data: teamsData }] = await Promise.all([
+            supabase.from('matches').select('id, home_team_id, away_team_id, match_date, status, home_score, away_score').order('match_date', { ascending: true }),
+            supabase.from('teams').select('id, name').order('name', { ascending: true }),
+        ])
         if (!matchesData || !teamsData) { setLoading(false); return }
 
-        const fixtures = matchesData.map((m: any) => ({
+        setTeams(teamsData)
+        setFixtures(matchesData.map((m: any) => ({
             ...m,
             home_team: { name: teamsData.find((t: any) => t.id === m.home_team_id)?.name || 'Unknown' },
             away_team: { name: teamsData.find((t: any) => t.id === m.away_team_id)?.name || 'Unknown' },
-        }))
-
-        setFixtures(fixtures)
+        })))
         setLoading(false)
     }
 
-    const filtered = fixtures.filter(f => filter === 'all' || f.status === filter)
+    // Apply both filters
+    const filtered = fixtures.filter(f => {
+        const statusMatch = filter === 'all' || f.status === filter
+        const teamMatch   = teamFilter === 'all' || f.home_team_id === teamFilter || f.away_team_id === teamFilter
+        return statusMatch && teamMatch
+    })
 
     const grouped = filtered.reduce((acc: Record<string, Fixture[]>, f) => {
         const key = new Date(f.match_date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
@@ -259,10 +269,10 @@ export default function FixturesPage() {
     }, {})
 
     const counts = {
-        all: fixtures.length,
+        all:       fixtures.length,
         scheduled: fixtures.filter(f => f.status === 'scheduled').length,
-        live: fixtures.filter(f => f.status === 'live').length,
-        finished: fixtures.filter(f => f.status === 'finished').length,
+        live:      fixtures.filter(f => f.status === 'live').length,
+        finished:  fixtures.filter(f => f.status === 'finished').length,
     }
 
     return (
@@ -279,21 +289,51 @@ export default function FixturesPage() {
                         <p className="subtitle">Sheffield 7-a-side · Season 1 · 2026</p>
                     </div>
 
+                    {/* Status filter */}
                     <div className="filter-tabs">
                         {(['all', 'live', 'scheduled', 'finished'] as FilterType[]).map(f => (
                             <button key={f} className={`filter-tab${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
-                                {f === 'all' && `All (${counts.all})`}
-                                {f === 'live' && `🔴 Live (${counts.live})`}
+                                {f === 'all'       && `All (${counts.all})`}
+                                {f === 'live'      && `🔴 Live (${counts.live})`}
                                 {f === 'scheduled' && `Upcoming (${counts.scheduled})`}
-                                {f === 'finished' && `Results (${counts.finished})`}
+                                {f === 'finished'  && `Results (${counts.finished})`}
                             </button>
                         ))}
                     </div>
 
+                    {/* Team filter */}
+                    <div className="team-filter">
+                        <span className="team-filter-label">Team:</span>
+                        <button className={`team-tab${teamFilter === 'all' ? ' active' : ''}`} onClick={() => setTeamFilter('all')}>
+                            All Teams
+                        </button>
+                        {teams.map(t => (
+                            <button key={t.id} className={`team-tab${teamFilter === t.id ? ' active' : ''}`} onClick={() => setTeamFilter(t.id)}>
+                                {shortName(t.name)}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Active team filter indicator */}
+                    {teamFilter !== 'all' && (
+                        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', color: '#60a5fa' }}>
+                                📌 Showing: {shortName(teams.find(t => t.id === teamFilter)?.name || '')} fixtures ({filtered.length})
+                            </span>
+                            <button onClick={() => setTeamFilter('all')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', padding: 0 }}>
+                                ✕ Clear
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Content */}
                     {loading ? (
-                        <div className="loading-wrap">
-                            <div className="spinner" />
-                            <span className="loading-text">Loading fixtures...</span>
+                        // Skeleton
+                        <div>
+                            <div className="skeleton-base skeleton-month" />
+                            {[1,2,3].map(i => <SkeletonCard key={i} />)}
+                            <div className="skeleton-base skeleton-month" style={{ marginTop: 20 }} />
+                            {[1,2].map(i => <SkeletonCard key={i+3} />)}
                         </div>
                     ) : filtered.length === 0 ? (
                         <div className="empty">
