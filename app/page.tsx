@@ -16,6 +16,14 @@ type Match = {
   away_team: { name: string }
 }
 
+type MatchEvent = {
+  id: string
+  type: string
+  minute: number | null
+  player_name: string
+  team_name: string
+}
+
 type TeamStats = {
   id: string
   name: string
@@ -268,12 +276,38 @@ const STYLES = `
   .r-score     { font-family:'Bebas Neue',sans-serif; font-size:28px; color:#fff; line-height:1; min-width:20px; text-align:center; }
   .r-sep       { font-family:'Bebas Neue',sans-serif; font-size:16px; color:rgba(255,255,255,0.2); }
 
+  /* ─── Event ticker ───────────────────────── */
+  .ticker {
+    margin-top: 12px;
+    background: rgba(0,0,0,0.2); border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 10px; overflow: hidden;
+  }
+  .ticker-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02);
+  }
+  .ticker-head-dot { width:5px; height:5px; background:#f87171; border-radius:50%; animation:blink 1.2s ease infinite; }
+  .ticker-head-txt { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+  .ticker-empty { padding:12px 14px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.07em; color:rgba(255,255,255,0.18); text-transform:uppercase; }
+  .ticker-event {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    animation: slideIn 0.3s ease both;
+  }
+  .ticker-event:last-child { border-bottom: none; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+  .ticker-icon { font-size:16px; flex-shrink:0; }
+  .ticker-info { flex:1; min-width:0; }
+  .ticker-player { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; color:#fff; letter-spacing:0.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ticker-team   { font-family:'Barlow',sans-serif; font-size:11px; color:rgba(255,255,255,0.3); margin-top:1px; }
+  .ticker-min    { font-family:'Bebas Neue',sans-serif; font-size:16px; color:rgba(255,255,255,0.25); flex-shrink:0; }
+
   /* Loading */
   .spin-wrap { display:flex; align-items:center; justify-content:center; padding:28px 0; }
   .spinner   { width:24px; height:24px; border:2px solid rgba(34,197,94,0.2); border-top-color:#22c55e; border-radius:50%; animation:spin 0.8s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg)} }
 `
-
 export default function HomePage() {
   const [liveMatch, setLiveMatch] = useState<Match | null>(null)
   const [nextFixture, setNextFixture] = useState<Match | null>(null)
@@ -282,6 +316,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [goals, setGoals] = useState(0)
   const [played, setPlayed] = useState(0)
+  const [liveEvents, setLiveEvents] = useState<MatchEvent[]>([])
 
   useEffect(() => {
     fetchAll()
@@ -311,13 +346,52 @@ export default function HomePage() {
       away_team: { name: teams.find((t: any) => t.id === m.away_team_id)?.name || 'Unknown' },
     }))
 
-    setLiveMatch(withTeams.find(m => m.status === 'live') || null)
+    const live = withTeams.find(m => m.status === 'live') || null
+    setLiveMatch(live)
+    if (live) fetchLiveEvents(live.id)
+    else setLiveEvents([])
     setNextFixture(withTeams.find(m => m.status === 'scheduled') || null)
     setRecentResults(withTeams.filter(m => m.status === 'finished').reverse().slice(0, 3))
     setTable((tableData || []).slice(0, 6))
     setGoals(goalCount || 0)
     setPlayed(withTeams.filter(m => m.status === 'finished').length)
     setLoading(false)
+  }
+
+  const fetchLiveEvents = async (matchId: string) => {
+    const { data: events } = await supabase
+      .from('match_events')
+      .select('id, type, minute, player_id')
+      .eq('match_id', matchId)
+      .order('created_at', { ascending: false })
+      .limit(8)
+
+    const { data: players } = await supabase.from('players').select('id, name, team_id')
+    const { data: teams } = await supabase.from('teams').select('id, name')
+
+    if (!events || !players || !teams) return
+
+    const enriched = events.map((e: any) => {
+      const p = players.find((p: any) => p.id === e.player_id)
+      const t = teams.find((t: any) => t.id === p?.team_id)
+      return {
+        id: e.id,
+        type: e.type,
+        minute: e.minute,
+        player_name: p?.name || 'Unknown',
+        team_name: t?.name || '',
+      }
+    })
+    setLiveEvents(enriched)
+  }
+
+  const eventIcon = (type: string) => {
+    if (type === 'goal') return '⚽'
+    if (type === 'assist') return '🅰️'
+    if (type === 'yellow') return '🟨'
+    if (type === 'red') return '🟥'
+    if (type === 'potm') return '⭐'
+    return '•'
   }
 
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -397,6 +471,30 @@ export default function HomePage() {
                 <div className="no-live">
                   <div className="no-live-icon">🕐</div>
                   <div className="no-live-txt">No match in progress</div>
+                </div>
+              )}
+
+              {/* Event ticker — only visible during a live match */}
+              {liveMatch && (
+                <div className="ticker">
+                  <div className="ticker-head">
+                    <div className="ticker-head-dot" />
+                    <span className="ticker-head-txt">Match Events</span>
+                  </div>
+                  {liveEvents.length === 0 ? (
+                    <div className="ticker-empty">No events yet — kick off!</div>
+                  ) : (
+                    liveEvents.map((e, i) => (
+                      <div key={e.id} className="ticker-event" style={{ animationDelay: `${i * 40}ms` }}>
+                        <div className="ticker-icon">{eventIcon(e.type)}</div>
+                        <div className="ticker-info">
+                          <div className="ticker-player">{e.player_name}</div>
+                          <div className="ticker-team">{shortName(e.team_name)}</div>
+                        </div>
+                        {e.minute && <div className="ticker-min">{e.minute}'</div>}
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

@@ -2,44 +2,45 @@
 
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 type TeamStats = {
-    id: string
-    name: string
-    played: number
-    wins: number
-    draws: number
-    losses: number
-    goals_for: number
-    goals_against: number
-    goal_difference: number
-    points: number
+  id: string
+  name: string
+  played: number
+  wins: number
+  draws: number
+  losses: number
+  goals_for: number
+  goals_against: number
+  goal_difference: number
+  points: number
 }
 
 // Shorten long team names for mobile
 function shortName(name: string): string {
-    const map: Record<string, string> = {
-        'HILLSBOROUGH WANDERERS': 'Hillsborough',
-        'ECCLESALL RANGERS': 'Ecclesall',
-        'SHIREGREEN UNITED FC': 'Shiregreen',
-        'PITSMOOR ROVERS': 'Pitsmoor',
-        'DARNALL CITY STARS': 'Darnall',
-        'BROOMHILL ATHLETIC': 'Broomhill',
-    }
-    return map[name] || name.split(' ')[0]
+  const map: Record<string, string> = {
+    'HILLSBOROUGH WANDERERS': 'Hillsborough',
+    'ECCLESALL RANGERS': 'Ecclesall',
+    'SHIREGREEN UNITED FC': 'Shiregreen',
+    'PITSMOOR ROVERS': 'Pitsmoor',
+    'DARNALL CITY STARS': 'Darnall',
+    'BROOMHILL ATHLETIC': 'Broomhill',
+  }
+  return map[name] || name.split(' ')[0]
 }
 
 function initials(name: string): string {
-    return name.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()
+  return name.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()
 }
 
 const TEAM_COLORS = [
-    { bg: 'rgba(239,68,68,0.15)', color: '#f87171' },
-    { bg: 'rgba(59,130,246,0.15)', color: '#60a5fa' },
-    { bg: 'rgba(168,85,247,0.15)', color: '#c084fc' },
-    { bg: 'rgba(234,179,8,0.15)', color: '#facc15' },
-    { bg: 'rgba(20,184,166,0.15)', color: '#2dd4bf' },
-    { bg: 'rgba(249,115,22,0.15)', color: '#fb923c' },
+  { bg: 'rgba(239,68,68,0.15)', color: '#f87171' },
+  { bg: 'rgba(59,130,246,0.15)', color: '#60a5fa' },
+  { bg: 'rgba(168,85,247,0.15)', color: '#c084fc' },
+  { bg: 'rgba(234,179,8,0.15)', color: '#facc15' },
+  { bg: 'rgba(20,184,166,0.15)', color: '#2dd4bf' },
+  { bg: 'rgba(249,115,22,0.15)', color: '#fb923c' },
 ]
 
 const STYLES = `
@@ -223,120 +224,120 @@ const STYLES = `
 `
 
 export default function LeagueTablePage() {
-    const [teams, setTeams] = useState<TeamStats[]>([])
-    const [loading, setLoading] = useState(true)
+  const [teams, setTeams] = useState<TeamStats[]>([])
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => { fetchLeagueTable() }, [])
+  useEffect(() => { fetchLeagueTable() }, [])
 
-    const fetchLeagueTable = async () => {
-        const { data, error } = await supabase.from('league_table').select('*')
-        if (error) { console.error(error); return }
-        setTeams(data || [])
-        setLoading(false)
-    }
+  const fetchLeagueTable = async () => {
+    const { data, error } = await supabase.from('league_table').select('*')
+    if (error) { console.error(error); return }
+    setTeams(data || [])
+    setLoading(false)
+  }
 
-    return (
-        <>
-            <style>{STYLES}</style>
-            <div className="page">
-                <div className="container">
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div className="page">
+        <div className="container">
 
-                    {/* Header */}
-                    <div className="header">
-                        <div className="league-badge">
-                            <div className="badge-dot">⚽</div>
-                            <span className="badge-text">Naija FC Sheffield</span>
-                        </div>
-                        <h1 className="title">League<br /><span>Table</span></h1>
-                        <p className="subtitle">Sheffield 7-a-side · 6 Teams</p>
-                        <div className="season-tag">⚡ Season 1 · 2026</div>
-                    </div>
-
-                    {/* Mobile hint */}
-                    <p className="mobile-note">Showing: P · W · L · GD · PTS</p>
-
-                    {/* Table */}
-                    <div className="table-card">
-
-                        {/* Column headers */}
-                        <div className="col-headers col-def">
-                            <div className="col-hd">#</div>
-                            <div className="col-hd left">Team</div>
-                            <div className="col-hd">P</div>
-                            <div className="col-hd">W</div>
-                            <div className="col-hd hide-mobile">D</div>
-                            <div className="col-hd">L</div>
-                            <div className="col-hd hide-mobile">GF</div>
-                            <div className="col-hd hide-mobile">GA</div>
-                            <div className="col-hd">GD</div>
-                            <div className="col-hd">PTS</div>
-                        </div>
-
-                        {loading ? (
-                            <div className="loading-wrap">
-                                <div className="spinner" />
-                                <span className="loading-text">Loading...</span>
-                            </div>
-                        ) : (
-                            teams.map((team, i) => {
-                                const color = TEAM_COLORS[i % 6]
-                                const gd = team.goal_difference
-                                const gdStr = gd > 0 ? `+${gd}` : `${gd}`
-                                const gdClass = gd > 0 ? 'cell-stat gd-pos' : gd < 0 ? 'cell-stat gd-neg' : 'cell-stat gd-zero'
-                                const rowClass = i === 0 ? 'team-row col-def row-champ' : i <= 2 ? 'team-row col-def row-top' : 'team-row col-def'
-                                const ptsClass = i === 0 ? 'pts-badge pts-champ' : i <= 2 ? 'pts-badge pts-top' : 'pts-badge pts-norm'
-
-                                return (
-                                    <div key={team.id} className={rowClass} style={{ animationDelay: `${i * 55}ms` }}>
-                                        {/* Position */}
-                                        <div className={`cell-pos${i === 0 ? ' champ' : ''}`}>
-                                            {i === 0 ? '👑' : i + 1}
-                                        </div>
-
-                                        {/* Team */}
-                                        <div className="cell-team">
-                                            <div className="team-avatar" style={{ background: color.bg, color: color.color }}>
-                                                {initials(team.name)}
-                                            </div>
-                                            <span className="team-name-full">
-                                                <span className="name-desktop">{team.name}</span>
-                                                <span className="name-mobile">{shortName(team.name)}</span>
-                                            </span>
-                                        </div>
-
-                                        {/* Stats */}
-                                        <div className="cell-stat bright">{team.played}</div>
-                                        <div className="cell-stat bright">{team.wins}</div>
-                                        <div className="cell-stat hide-mobile">{team.draws}</div>
-                                        <div className="cell-stat">{team.losses}</div>
-                                        <div className="cell-stat hide-mobile">{team.goals_for}</div>
-                                        <div className="cell-stat hide-mobile">{team.goals_against}</div>
-                                        <div className={gdClass}>{gdStr}</div>
-
-                                        {/* Points */}
-                                        <div className="cell-pts">
-                                            <span className={ptsClass}>{team.points}</span>
-                                        </div>
-                                    </div>
-                                )
-                            })
-                        )}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="legend">
-                        <div className="legend-item">
-                            <div className="legend-dot" style={{ background: '#fbbf24' }} />
-                            <span>Champions</span>
-                        </div>
-                        <div className="legend-item">
-                            <div className="legend-dot" style={{ background: '#22c55e' }} />
-                            <span>Top 3</span>
-                        </div>
-                    </div>
-
-                </div>
+          {/* Header */}
+          <div className="header">
+            <div className="league-badge">
+              <div className="badge-dot">⚽</div>
+              <span className="badge-text">Naija FC Sheffield</span>
             </div>
-        </>
-    )
+            <h1 className="title">League<br /><span>Table</span></h1>
+            <p className="subtitle">Sheffield 7-a-side · 6 Teams</p>
+            <div className="season-tag">⚡ Season 1 · 2026</div>
+          </div>
+
+          {/* Mobile hint */}
+          <p className="mobile-note">Showing: P · W · L · GD · PTS</p>
+
+          {/* Table */}
+          <div className="table-card">
+
+            {/* Column headers */}
+            <div className="col-headers col-def">
+              <div className="col-hd">#</div>
+              <div className="col-hd left">Team</div>
+              <div className="col-hd">P</div>
+              <div className="col-hd">W</div>
+              <div className="col-hd hide-mobile">D</div>
+              <div className="col-hd">L</div>
+              <div className="col-hd hide-mobile">GF</div>
+              <div className="col-hd hide-mobile">GA</div>
+              <div className="col-hd">GD</div>
+              <div className="col-hd">PTS</div>
+            </div>
+
+            {loading ? (
+              <div className="loading-wrap">
+                <div className="spinner" />
+                <span className="loading-text">Loading...</span>
+              </div>
+            ) : (
+              teams.map((team, i) => {
+                const color = TEAM_COLORS[i % 6]
+                const gd = team.goal_difference
+                const gdStr = gd > 0 ? `+${gd}` : `${gd}`
+                const gdClass = gd > 0 ? 'cell-stat gd-pos' : gd < 0 ? 'cell-stat gd-neg' : 'cell-stat gd-zero'
+                const rowClass = i === 0 ? 'team-row col-def row-champ' : i <= 2 ? 'team-row col-def row-top' : 'team-row col-def'
+                const ptsClass = i === 0 ? 'pts-badge pts-champ' : i <= 2 ? 'pts-badge pts-top' : 'pts-badge pts-norm'
+
+                return (
+                  <div key={team.id} className={rowClass} style={{ animationDelay: `${i * 55}ms` }}>
+                    {/* Position */}
+                    <div className={`cell-pos${i === 0 ? ' champ' : ''}`}>
+                      {i === 0 ? '👑' : i + 1}
+                    </div>
+
+                    {/* Team */}
+                    <div className="cell-team">
+                      <div className="team-avatar" style={{ background: color.bg, color: color.color }}>
+                        {initials(team.name)}
+                      </div>
+                      <Link href={`/teams/${team.id}`} className="team-name-full" style={{ textDecoration: 'none' }}>
+                        <span className="name-desktop">{team.name}</span>
+                        <span className="name-mobile">{shortName(team.name)}</span>
+                      </Link>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="cell-stat bright">{team.played}</div>
+                    <div className="cell-stat bright">{team.wins}</div>
+                    <div className="cell-stat hide-mobile">{team.draws}</div>
+                    <div className="cell-stat">{team.losses}</div>
+                    <div className="cell-stat hide-mobile">{team.goals_for}</div>
+                    <div className="cell-stat hide-mobile">{team.goals_against}</div>
+                    <div className={gdClass}>{gdStr}</div>
+
+                    {/* Points */}
+                    <div className="cell-pts">
+                      <span className={ptsClass}>{team.points}</span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Legend */}
+          <div className="legend">
+            <div className="legend-item">
+              <div className="legend-dot" style={{ background: '#fbbf24' }} />
+              <span>Champions</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-dot" style={{ background: '#22c55e' }} />
+              <span>Top 3</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </>
+  )
 }

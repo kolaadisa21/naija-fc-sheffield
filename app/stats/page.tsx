@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 
 type StatRow = {
     player_id: string
@@ -43,7 +44,7 @@ const STYLES = `
     padding: 40px 16px 100px;
     font-family: 'Barlow', sans-serif; color: #fff;
   }
-  .container { max-width: 700px; margin: 0 auto; }
+  .container { max-width: 860px; margin: 0 auto; }
 
   /* Header */
   .header { margin-bottom: 28px; }
@@ -104,7 +105,7 @@ const STYLES = `
     position:relative; animation:fadeIn 0.3s ease both;
   }
   .lb-row:last-child { border-bottom:none; }
-  .lb-row:hover { background:rgba(255,255,255,0.03); }
+  .lb-row:hover { background:rgba(34,197,94,0.04); cursor:pointer; }
 
   @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 
@@ -243,7 +244,7 @@ export default function StatsPage() {
                                 <div className="lb-hd">{tab.icon}</div>
                             </div>
                             {rows.map((row, i) => (
-                                <div key={row.player_id} className={rowClass(i)} style={{ animationDelay: `${i * 50}ms` }}>
+                                <Link key={row.player_id} href={`/players/${row.player_id}`} className={rowClass(i)} style={{ animationDelay: `${i * 50}ms`, textDecoration: 'none' }}>
                                     <div className="cell-rank">{rankIcon(i)}</div>
                                     <div className="cell-player">
                                         <div className="player-name">{row.player_name}</div>
@@ -255,7 +256,7 @@ export default function StatsPage() {
                                             {row.count}
                                         </span>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )}
