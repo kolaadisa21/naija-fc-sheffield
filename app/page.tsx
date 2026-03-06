@@ -96,14 +96,7 @@ const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .page {
-    min-height: 100vh;
-    background: #080f08;
-    font-family: 'Barlow', sans-serif;
-    color: #fff;
-    padding-bottom: 100px;
-  }
-
+  .page { min-height: 100vh; background: #080f08; font-family: 'Barlow', sans-serif; color: #fff; padding-bottom: 100px; }
   .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
 
   .hero { position: relative; padding-top: 36px; padding-bottom: 40px; overflow: hidden; }
@@ -113,12 +106,7 @@ const STYLES = `
       radial-gradient(ellipse 100% 100% at 75% 0%,  rgba(34,197,94,0.13) 0%, transparent 55%),
       radial-gradient(ellipse 60%  80% at 10% 100%, rgba(16,80,16,0.28)  0%, transparent 50%);
   }
-  .hero-grid {
-    position: absolute; inset: 0; z-index: 0; opacity: 0.04;
-    background-image:
-      repeating-linear-gradient(0deg,  transparent, transparent 40px, #fff 40px, #fff 41px),
-      repeating-linear-gradient(90deg, transparent, transparent 40px, #fff 40px, #fff 41px);
-  }
+  .hero-grid { position: absolute; inset: 0; z-index: 0; opacity: 0.04; background-image: repeating-linear-gradient(0deg, transparent, transparent 40px, #fff 40px, #fff 41px), repeating-linear-gradient(90deg, transparent, transparent 40px, #fff 40px, #fff 41px); }
   .hero-7 { position: absolute; right: 0; top: -20px; z-index: 0; font-family: 'Bebas Neue', sans-serif; font-size: clamp(160px, 28vw, 300px); color: rgba(34,197,94,0.045); line-height: 1; pointer-events: none; user-select: none; }
   .hero .wrap { position: relative; z-index: 1; }
 
@@ -137,7 +125,7 @@ const STYLES = `
   .btn-secondary { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:12px 20px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,255,255,0.55); text-decoration:none; transition:background 0.2s; }
   .btn-secondary:hover { background:rgba(255,255,255,0.09); }
 
-  .stats-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:28px; margin-bottom:0; }
+  .stats-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:28px; }
   .stat-tile { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:16px 12px; text-align:center; transition:border-color 0.2s; }
   .stat-tile:hover { border-color:rgba(34,197,94,0.2); }
   .stat-icon { font-size:22px; margin-bottom:6px; }
@@ -155,6 +143,7 @@ const STYLES = `
     .two-col-wide { display:grid; grid-template-columns:1.15fr 0.85fr; gap:20px; align-items:start; }
   }
 
+  /* Live card */
   .live-card { background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.22); border-radius:14px; padding:16px 18px; position:relative; overflow:hidden; }
   .live-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#ef4444,#dc2626); }
   .live-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
@@ -174,6 +163,7 @@ const STYLES = `
   .no-live-icon { font-size:28px; margin-bottom:6px; }
   .no-live-txt  { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.18); }
 
+  /* Next fixture */
   .next-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px; text-decoration:none; display:block; transition:border-color 0.2s; }
   .next-card:hover { border-color:rgba(34,197,94,0.2); }
   .next-date  { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#22c55e; margin-bottom:10px; }
@@ -181,30 +171,44 @@ const STYLES = `
   .next-vs    { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.1em; color:rgba(255,255,255,0.2); text-transform:uppercase; margin:4px 0; }
   .next-time  { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.25); margin-top:10px; }
 
-  /* Mini table */
+  /* ── Mini table ── */
   .mini-table { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; }
-  .mt-head { display:grid; grid-template-columns:26px 1fr 28px 28px 36px; padding:10px 12px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05); }
+
+  /* 6 columns: # · Team · P · W · L · PTS */
+  .mt-head { display:grid; grid-template-columns:26px 1fr 26px 26px 26px 34px; padding:10px 12px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05); gap:0; }
   .mt-hd   { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.2); text-align:center; }
   .mt-hd.l { text-align:left; }
-  .mt-row  { display:grid; grid-template-columns:26px 1fr 28px 28px 36px; padding:0 12px; height:46px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); position:relative; }
+
+  .mt-row  { display:grid; grid-template-columns:26px 1fr 26px 26px 26px 34px; padding:0 12px; height:46px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); position:relative; transition:background 0.15s; gap:0; }
   .mt-row:last-child { border-bottom:none; }
+  .mt-row:hover { background:rgba(255,255,255,0.03); }
   .mt-row.ch { background:linear-gradient(90deg,rgba(251,191,36,0.07) 0%,transparent 60%); }
   .mt-row.ch::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#fbbf24,#f59e0b); }
   .mt-row.tp { background:linear-gradient(90deg,rgba(34,197,94,0.05) 0%,transparent 60%); }
   .mt-row.tp::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#22c55e,#16a34a); }
+
   .mt-pos  { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; color:rgba(255,255,255,0.2); text-align:center; }
   .mt-pos.g{ color:#fbbf24; }
+
+  /* Team cell — avatar + name as a clickable link */
   .mt-team { display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; }
+  .mt-team-link { display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-decoration:none; flex:1; }
+  .mt-team-link:hover .mt-name { color:#22c55e; }
   .mt-av   { width:22px; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:9px; flex-shrink:0; }
-  .mt-name { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; }
-  .mt-stat { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; color:rgba(255,255,255,0.4); text-align:center; }
+  .mt-name { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color 0.15s; }
+
+  .mt-stat   { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; color:rgba(255,255,255,0.4); text-align:center; }
+  .mt-stat.p { color:rgba(255,255,255,0.55); }
+  .mt-stat.w { color:rgba(255,255,255,0.85); font-weight:700; }
+  .mt-stat.l { color:rgba(239,68,68,0.65); }
+
   .pts-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; border-radius:4px; font-family:'Bebas Neue',sans-serif; font-size:14px; }
   .pts-c { background:rgba(251,191,36,0.14); color:#fbbf24; border:1px solid rgba(251,191,36,0.25); }
   .pts-t { background:rgba(34,197,94,0.1);   color:#22c55e; border:1px solid rgba(34,197,94,0.2); }
   .pts-n { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.45); border:1px solid rgba(255,255,255,0.08); }
 
-  /* Live badge (mini table) */
-  .mt-live { display:inline-flex; align-items:center; gap:3px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); border-radius:4px; padding:1px 5px; font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.06em; color:#f87171; flex-shrink:0; }
+  /* Live badge */
+  .mt-live { display:inline-flex; align-items:center; gap:3px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); border-radius:4px; padding:1px 5px; font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.06em; color:#f87171; flex-shrink:0; margin-left:4px; }
   .mt-live-dot { width:4px; height:4px; background:#f87171; border-radius:50%; animation:livePulse 1.2s ease infinite; }
   @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
@@ -273,7 +277,6 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    // Initial full load
     const init = async () => {
       const [{ data: teams }, { data: matches }, { count: goalCount }] = await Promise.all([
         supabase.from('teams').select('id, name'),
@@ -288,7 +291,6 @@ export default function HomePage() {
     }
     init()
 
-    // Poll every 5 seconds for live updates
     const interval = setInterval(async () => {
       if (!teamsRef.current.length) return
       const [{ data: matches }, { count: goalCount }] = await Promise.all([
@@ -305,11 +307,8 @@ export default function HomePage() {
 
   const fetchLiveEvents = async (matchId: string) => {
     const { data: events } = await supabase
-      .from('match_events')
-      .select('id, type, minute, player_id')
-      .eq('match_id', matchId)
-      .order('created_at', { ascending: false })
-      .limit(8)
+      .from('match_events').select('id, type, minute, player_id').eq('match_id', matchId)
+      .order('created_at', { ascending: false }).limit(8)
     const { data: players } = await supabase.from('players').select('id, name, team_id')
     const { data: teams }   = await supabase.from('teams').select('id, name')
     if (!events || !players || !teams) return
@@ -329,8 +328,8 @@ export default function HomePage() {
     return '•'
   }
 
-  const fmt     = (d: string) => new Date(d).toLocaleDateString('en-GB',  { weekday:'short', day:'numeric', month:'short' })
-  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-GB',  { hour:'2-digit', minute:'2-digit' })
+  const fmt     = (d: string) => new Date(d).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
 
   return (
     <>
@@ -341,7 +340,6 @@ export default function HomePage() {
           <div className="hero-bg" />
           <div className="hero-grid" />
           <div className="hero-7">7</div>
-
           <div className="wrap">
             <div className="hero-eyebrow">
               <div className="eyebrow-dot" />
@@ -382,21 +380,23 @@ export default function HomePage() {
               {loading ? (
                 <div className="spin-wrap"><div className="spinner" /></div>
               ) : liveMatch ? (
-                <div className="live-card">
-                  <div className="live-top">
-                    <div className="live-pill"><div className="live-dot" />Live Now</div>
-                    <span className="live-date">{fmt(liveMatch.match_date)}</span>
-                  </div>
-                  <div className="scoreline">
-                    <div className="s-team"><div className="s-name home">{shortName(liveMatch.home_team.name)}</div></div>
-                    <div className="s-scores">
-                      <span className="s-score">{liveMatch.home_score ?? 0}</span>
-                      <span className="s-sep">-</span>
-                      <span className="s-score">{liveMatch.away_score ?? 0}</span>
+                <Link href={`/matches/${liveMatch.id}`} style={{ textDecoration:'none', display:'block' }}>
+                  <div className="live-card">
+                    <div className="live-top">
+                      <div className="live-pill"><div className="live-dot" />Live Now</div>
+                      <span className="live-date">{fmt(liveMatch.match_date)}</span>
                     </div>
-                    <div className="s-team"><div className="s-name away">{shortName(liveMatch.away_team.name)}</div></div>
+                    <div className="scoreline">
+                      <div className="s-team"><div className="s-name home">{shortName(liveMatch.home_team.name)}</div></div>
+                      <div className="s-scores">
+                        <span className="s-score">{liveMatch.home_score ?? 0}</span>
+                        <span className="s-sep">-</span>
+                        <span className="s-score">{liveMatch.away_score ?? 0}</span>
+                      </div>
+                      <div className="s-team"><div className="s-name away">{shortName(liveMatch.away_team.name)}</div></div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ) : (
                 <div className="no-live">
                   <div className="no-live-icon">🕐</div>
@@ -458,13 +458,13 @@ export default function HomePage() {
                   <div className="mt-head">
                     <div className="mt-hd">#</div>
                     <div className="mt-hd l">Team</div>
+                    <div className="mt-hd">P</div>
                     <div className="mt-hd">W</div>
-                    <div className="mt-hd">GD</div>
+                    <div className="mt-hd">L</div>
                     <div className="mt-hd">PTS</div>
                   </div>
                   {table.map((team, i) => {
                     const c  = TEAM_COLORS[i % 6]
-                    const gd = team.goal_difference
                     const rc = i === 0 ? 'mt-row ch' : i <= 2 ? 'mt-row tp' : 'mt-row'
                     const pc = i === 0 ? 'pts-badge pts-c' : i <= 2 ? 'pts-badge pts-t' : 'pts-badge pts-n'
                     const isLive = liveTeamIds.has(team.id)
@@ -472,16 +472,17 @@ export default function HomePage() {
                       <div key={team.id} className={rc}>
                         <div className={`mt-pos${i===0?' g':''}`}>{i===0?'👑':i+1}</div>
                         <div className="mt-team">
-                          <div className="mt-av" style={{ background:c.bg, color:c.color }}>{initials(team.name)}</div>
-                          <span className="mt-name">{shortName(team.name)}</span>
+                          <Link href={`/teams/${team.id}`} className="mt-team-link">
+                            <div className="mt-av" style={{ background:c.bg, color:c.color }}>{initials(team.name)}</div>
+                            <span className="mt-name">{shortName(team.name)}</span>
+                          </Link>
                           {isLive && (
                             <span className="mt-live"><div className="mt-live-dot" />LIVE</span>
                           )}
                         </div>
-                        <div className="mt-stat">{team.wins}</div>
-                        <div className="mt-stat" style={{ color: gd>0?'#22c55e':gd<0?'#f87171':'rgba(255,255,255,0.3)' }}>
-                          {gd>0?`+${gd}`:gd}
-                        </div>
+                        <div className="mt-stat p">{team.played}</div>
+                        <div className="mt-stat w">{team.wins}</div>
+                        <div className="mt-stat l">{team.losses}</div>
                         <div style={{ textAlign:'center' }}><span className={pc}>{team.points}</span></div>
                       </div>
                     )
@@ -500,20 +501,24 @@ export default function HomePage() {
                   const hw = m.home_score > m.away_score
                   const aw = m.away_score > m.home_score
                   return (
-                    <div key={m.id} className="result-card">
-                      <div className="res-top">
-                        <span className="res-date">{fmt(m.match_date)}</span>
-                      </div>
-                      <div className="res-line">
-                        <div className={`r-name home${hw?' win':aw?' lose':''}`}>{shortName(m.home_team.name)}</div>
-                        <div className="r-scores">
-                          <span className="r-score">{m.home_score}</span>
-                          <span className="r-sep">-</span>
-                          <span className="r-score">{m.away_score}</span>
+                    <Link key={m.id} href={`/matches/${m.id}`} style={{ textDecoration:'none', display:'block' }}>
+                      <div className="result-card" style={{ cursor:'pointer', transition:'border-color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor='rgba(255,255,255,0.14)')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor='rgba(255,255,255,0.07)')}>
+                        <div className="res-top">
+                          <span className="res-date">{fmt(m.match_date)}</span>
                         </div>
-                        <div className={`r-name away${aw?' win':hw?' lose':''}`}>{shortName(m.away_team.name)}</div>
+                        <div className="res-line">
+                          <div className={`r-name home${hw?' win':aw?' lose':''}`}>{shortName(m.home_team.name)}</div>
+                          <div className="r-scores">
+                            <span className="r-score">{m.home_score}</span>
+                            <span className="r-sep">-</span>
+                            <span className="r-score">{m.away_score}</span>
+                          </div>
+                          <div className={`r-name away${aw?' win':hw?' lose':''}`}>{shortName(m.away_team.name)}</div>
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>

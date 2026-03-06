@@ -18,9 +18,10 @@ type StatSummary = {
     goals: number
     assists: number
     yellow: number
-    red: number
+    red: number        // direct reds only
     potm: number
     matches: number
+    secondYellowReds: number  // 2Y→R count
 }
 
 type MatchAppearance = {
@@ -31,7 +32,7 @@ type MatchAppearance = {
     home_score: number
     away_score: number
     status: string
-    events: { type: string; minute: number | null }[]
+    events: { type: string; minute: number | null; secondYellow?: boolean }[]
 }
 
 function shortName(name: string): string {
@@ -87,7 +88,6 @@ const STYLES = `
   .back-link:hover { color: #22c55e; }
 
   .player-header { display: flex; align-items: flex-end; gap: 20px; margin-bottom: 8px; }
-
   .player-avatar {
     width: 72px; height: 72px; border-radius: 16px;
     background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,80,16,0.4));
@@ -96,8 +96,6 @@ const STYLES = `
     font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #22c55e;
     flex-shrink: 0;
   }
-
-  .player-info {}
   .player-number {
     font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
     letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.3);
@@ -126,7 +124,6 @@ const STYLES = `
   /* ── Stat grid ── */
   .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 32px; margin-top: 28px; }
   @media (min-width: 500px) { .stat-grid { grid-template-columns: repeat(5, 1fr); } }
-
   .stat-card {
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
     border-radius: 12px; padding: 14px 10px; text-align: center;
@@ -143,7 +140,9 @@ const STYLES = `
   .match-card {
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
     border-radius: 12px; padding: 14px 16px; margin-bottom: 8px;
+    text-decoration: none; display: block; transition: border-color 0.15s;
   }
+  .match-card:hover { border-color: rgba(255,255,255,0.14); }
   .match-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .match-date { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; color: rgba(255,255,255,0.25); }
   .match-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
@@ -168,10 +167,8 @@ const STYLES = `
   .event-tag.red    { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25);  color: #f87171; }
   .event-tag.potm   { background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.25); color: #c084fc; }
 
-  /* ── Empty ── */
+  /* ── Empty / Loading ── */
   .empty { text-align: center; padding: 40px 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.18); }
-
-  /* Loading */
   .loading-wrap { display: flex; align-items: center; justify-content: center; padding: 80px 0; gap: 10px; }
   .spinner { width: 28px; height: 28px; border: 2px solid rgba(34,197,94,0.2); border-top-color: #22c55e; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -179,82 +176,104 @@ const STYLES = `
 `
 
 const STAT_DEFS = [
-    { key: 'goals', icon: '⚽', label: 'Goals', color: '#22c55e' },
-    { key: 'assists', icon: '🅰️', label: 'Assists', color: '#60a5fa' },
-    { key: 'yellow', icon: '🟨', label: 'Yellows', color: '#facc15' },
-    { key: 'red', icon: '🟥', label: 'Reds', color: '#f87171' },
-    { key: 'potm', icon: '⭐', label: 'POTM', color: '#c084fc' },
+    { key: 'goals',  icon: '⚽', label: 'Goals',   color: '#22c55e' },
+    { key: 'assists',icon: '🅰️', label: 'Assists',  color: '#60a5fa' },
+    { key: 'yellow', icon: '🟨', label: 'Yellows',  color: '#facc15' },
+    { key: 'red',    icon: '🟥', label: 'Reds',     color: '#f87171' },
+    { key: 'potm',   icon: '⭐', label: 'POTM',     color: '#c084fc' },
 ]
+
+// Process raw events for a player, turning 2nd yellow into a red (secondYellow flag)
+function processPlayerEvents(raw: { type: string; minute: number | null }[]) {
+    let yellowCount = 0
+    return raw.map(e => {
+        if (e.type === 'yellow') {
+            yellowCount++
+            if (yellowCount === 2) return { ...e, type: 'red', secondYellow: true }
+        }
+        return { ...e, secondYellow: false }
+    })
+}
 
 export default function PlayerProfilePage() {
     const params = useParams()
     const playerId = params?.id as string
 
     const [player, setPlayer] = useState<Player | null>(null)
-    const [stats, setStats] = useState<StatSummary>({ goals: 0, assists: 0, yellow: 0, red: 0, potm: 0, matches: 0 })
+    const [stats, setStats] = useState<StatSummary>({ goals: 0, assists: 0, yellow: 0, red: 0, potm: 0, matches: 0, secondYellowReds: 0 })
     const [appearances, setAppearances] = useState<MatchAppearance[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => { if (playerId) fetchData() }, [playerId])
 
     const fetchData = async () => {
-        // Player info
         const { data: playerData } = await supabase
-            .from('players')
-            .select('id, name, position, shirt_number, team_id')
-            .eq('id', playerId)
-            .single()
+            .from('players').select('id, name, position, shirt_number, team_id').eq('id', playerId).single()
 
         if (!playerData) { setLoading(false); return }
 
         const { data: teamsData } = await supabase.from('teams').select('id, name')
         const teamName = teamsData?.find((t: any) => t.id === playerData.team_id)?.name || 'Unknown'
-
         setPlayer({ ...playerData, team_name: teamName })
 
-        // All events for this player
-        const { data: events } = await supabase
-            .from('match_events')
-            .select('id, type, minute, match_id')
-            .eq('player_id', playerId)
+        const { data: rawEvents } = await supabase
+            .from('match_events').select('id, type, minute, match_id').eq('player_id', playerId)
 
-        if (!events) { setLoading(false); return }
+        if (!rawEvents) { setLoading(false); return }
 
-        // Stats summary
-        const summary = { goals: 0, assists: 0, yellow: 0, red: 0, potm: 0, matches: 0 }
-        events.forEach((e: any) => {
-            if (e.type === 'goal') summary.goals++
-            if (e.type === 'assist') summary.assists++
-            if (e.type === 'yellow') summary.yellow++
-            if (e.type === 'red') summary.red++
-            if (e.type === 'potm') summary.potm++
+        // ── Stats summary (2Y = 1 red, consumes 1 yellow slot) ────────────────
+        const summary: StatSummary = { goals: 0, assists: 0, yellow: 0, red: 0, potm: 0, matches: 0, secondYellowReds: 0 }
+
+        // Group by match to reset yellow counter per match
+        const byMatch: Record<string, typeof rawEvents> = {}
+        rawEvents.forEach((e: any) => {
+            if (!byMatch[e.match_id]) byMatch[e.match_id] = []
+            byMatch[e.match_id].push(e)
         })
 
-        // Unique matches played
-        const matchIds = [...new Set(events.map((e: any) => e.match_id))]
-        summary.matches = matchIds.length
+        Object.values(byMatch).forEach(matchEvs => {
+            const processed = processPlayerEvents(matchEvs)
+            processed.forEach((e: any) => {
+                if (e.type === 'goal')   summary.goals++
+                if (e.type === 'assist') summary.assists++
+                if (e.type === 'potm')   summary.potm++
+                if (e.secondYellow) {
+                    summary.secondYellowReds++
+                    summary.red++
+                    summary.yellow++ // 1st yellow still counts
+                } else if (e.type === 'yellow') {
+                    summary.yellow++
+                } else if (e.type === 'red') {
+                    summary.red++
+                }
+            })
+        })
+
+        summary.matches = Object.keys(byMatch).length
         setStats(summary)
 
-        // Fetch those matches
-        if (matchIds.length > 0) {
+        // ── Match appearances ─────────────────────────────────────────────────
+        const matchIds = Object.keys(byMatch)
+        if (matchIds.length > 0 && teamsData) {
             const { data: matchesData } = await supabase
-                .from('matches')
-                .select('id, home_team_id, away_team_id, match_date, status, home_score, away_score')
-                .in('id', matchIds)
-                .order('match_date', { ascending: false })
+                .from('matches').select('id, home_team_id, away_team_id, match_date, status, home_score, away_score')
+                .in('id', matchIds).order('match_date', { ascending: false })
 
-            if (matchesData && teamsData) {
-                const enriched = matchesData.map((m: any) => ({
-                    match_id: m.id,
-                    match_date: m.match_date,
-                    home_team: teamsData.find((t: any) => t.id === m.home_team_id)?.name || 'Unknown',
-                    away_team: teamsData.find((t: any) => t.id === m.away_team_id)?.name || 'Unknown',
-                    home_score: m.home_score,
-                    away_score: m.away_score,
-                    status: m.status,
-                    events: events.filter((e: any) => e.match_id === m.id).map((e: any) => ({ type: e.type, minute: e.minute })),
+            if (matchesData) {
+                setAppearances(matchesData.map((m: any) => {
+                    const matchRaw = byMatch[m.id] || []
+                    const processed = processPlayerEvents(matchRaw)
+                    return {
+                        match_id: m.id,
+                        match_date: m.match_date,
+                        home_team: teamsData.find((t: any) => t.id === m.home_team_id)?.name || 'Unknown',
+                        away_team: teamsData.find((t: any) => t.id === m.away_team_id)?.name || 'Unknown',
+                        home_score: m.home_score,
+                        away_score: m.away_score,
+                        status: m.status,
+                        events: processed.map((e: any) => ({ type: e.type, minute: e.minute, secondYellow: e.secondYellow })),
+                    }
                 }))
-                setAppearances(enriched)
             }
         }
 
@@ -263,81 +282,69 @@ export default function PlayerProfilePage() {
 
     const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 
-    const eventLabel = (type: string, minute: number | null) => {
+    const eventLabel = (e: { type: string; minute: number | null; secondYellow?: boolean }) => {
+        if (e.secondYellow) return `🟨🟥 2nd Yellow${e.minute ? ` ${e.minute}'` : ''}`
         const icons: Record<string, string> = { goal: '⚽ Goal', assist: '🅰️ Assist', yellow: '🟨 Yellow', red: '🟥 Red', potm: '⭐ POTM' }
-        const label = icons[type] || type
-        return minute ? `${label} ${minute}'` : label
+        const label = icons[e.type] || e.type
+        return e.minute ? `${label} ${e.minute}'` : label
     }
 
+    const tagClass = (e: { type: string; secondYellow?: boolean }) =>
+        e.secondYellow ? 'red' : e.type
+
     if (loading) return (
-        <>
-            <style>{STYLES}</style>
-            <div className="loading-wrap"><div className="spinner" /><span className="loading-text">Loading...</span></div>
-        </>
+        <><style>{STYLES}</style>
+        <div className="loading-wrap"><div className="spinner" /><span className="loading-text">Loading...</span></div></>
     )
 
     if (!player) return (
-        <>
-            <style>{STYLES}</style>
-            <div className="empty">Player not found</div>
-        </>
+        <><style>{STYLES}</style><div className="empty">Player not found</div></>
     )
 
     const initials = player.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+
+    // Red card stat display: total reds = direct reds + 2Y-reds
+    // Yellow stat: all yellows recorded (including the 1st of a 2Y pair)
+    const displayReds = stats.red   // already includes secondYellowReds
 
     return (
         <>
             <style>{STYLES}</style>
             <div className="page">
-
-                {/* Hero */}
                 <div className="hero">
                     <div className="hero-bg" />
                     <div className="hero-grid" />
                     <div className="hero-inner">
                         <Link href="/stats" className="back-link">← Back to Stats</Link>
-
                         <div className="player-header">
                             <div className="player-avatar">{initials}</div>
                             <div className="player-info">
-                                {player.shirt_number && (
-                                    <div className="player-number">#{player.shirt_number}</div>
-                                )}
+                                {player.shirt_number && <div className="player-number">#{player.shirt_number}</div>}
                                 <div className="player-name">{player.name}</div>
                             </div>
                         </div>
-
                         <div className="player-meta">
-                            <span className="meta-pill green">
-                                {shortName(player.team_name)}
-                            </span>
-                            <span className="meta-pill">
-                                {player.position === 'GK' ? '🧤 Goalkeeper' : '⚽ Outfield'}
-                            </span>
-                            <span className="meta-pill">
-                                {stats.matches} {stats.matches === 1 ? 'appearance' : 'appearances'}
-                            </span>
+                            <span className="meta-pill green">{shortName(player.team_name)}</span>
+                            <span className="meta-pill">{player.position === 'GK' ? '🧤 Goalkeeper' : '⚽ Outfield'}</span>
+                            <span className="meta-pill">{stats.matches} {stats.matches === 1 ? 'appearance' : 'appearances'}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Body */}
                 <div className="body">
-
-                    {/* Stat grid */}
                     <div className="stat-grid">
-                        {STAT_DEFS.map(s => (
-                            <div key={s.key} className="stat-card">
-                                <div className="stat-card-icon">{s.icon}</div>
-                                <div className="stat-card-value" style={{ color: stats[s.key as keyof StatSummary] > 0 ? s.color : 'rgba(255,255,255,0.2)' }}>
-                                    {stats[s.key as keyof StatSummary]}
+                        {STAT_DEFS.map(s => {
+                            const val = s.key === 'red' ? displayReds : stats[s.key as keyof StatSummary] as number
+                            return (
+                                <div key={s.key} className="stat-card">
+                                    <div className="stat-card-icon">{s.icon}</div>
+                                    <div className="stat-card-value" style={{ color: val > 0 ? s.color : 'rgba(255,255,255,0.2)' }}>{val}</div>
+                                    <div className="stat-card-label">{s.label}</div>
                                 </div>
-                                <div className="stat-card-label">{s.label}</div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
-                    {/* Match history */}
                     <div className="sec-head">
                         <div className="sec-title">🏟️ Match History</div>
                     </div>
@@ -346,7 +353,7 @@ export default function PlayerProfilePage() {
                         <div className="empty">No match appearances yet</div>
                     ) : (
                         appearances.map(m => (
-                            <div key={m.match_id} className="match-card">
+                            <Link key={m.match_id} href={`/matches/${m.match_id}`} className="match-card">
                                 <div className="match-top">
                                     <span className="match-date">{fmt(m.match_date)}</span>
                                 </div>
@@ -361,15 +368,14 @@ export default function PlayerProfilePage() {
                                 </div>
                                 <div className="match-events">
                                     {m.events.map((e, i) => (
-                                        <span key={i} className={`event-tag ${e.type}`}>
-                                            {eventLabel(e.type, e.minute)}
+                                        <span key={i} className={`event-tag ${tagClass(e)}`}>
+                                            {eventLabel(e)}
                                         </span>
                                     ))}
                                 </div>
-                            </div>
+                            </Link>
                         ))
                     )}
-
                 </div>
             </div>
         </>

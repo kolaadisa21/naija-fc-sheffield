@@ -124,57 +124,151 @@ const STYLES = `
   .section { margin-bottom:20px; }
   .section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.04em; color:#fff; margin-bottom:12px; }
 
-  /* Events timeline — 3-col grid: left (home) | centre (minute) | right (away) */
+  /* Events timeline — 3-col: home | minute | away */
   .events-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; }
-  .event-row {
-    display:grid;
+
+  /* Column labels row */
+  .events-header {
+    display: grid;
     grid-template-columns: 1fr 48px 1fr;
-    align-items:center;
-    padding:10px 14px;
-    border-bottom:1px solid rgba(255,255,255,0.04);
-    transition:background 0.1s;
-    gap:4px;
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
   }
-  .event-row:last-child { border-bottom:none; }
-  .event-row:hover { background:rgba(255,255,255,0.03); }
-
-  /* Centre minute bubble */
-  .event-min-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
-  .event-min {
-    font-family:'Bebas Neue',sans-serif; font-size:15px; line-height:1;
-    color:#fff;
-    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
-    border-radius:6px; padding:3px 6px; min-width:34px; text-align:center;
+  .events-header-home {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: rgba(34,197,94,0.6);
   }
-  .event-min-line { width:1px; height:100%; background:rgba(255,255,255,0.06); }
+  .events-header-min {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.15);
+    text-align: center;
+  }
+  .events-header-away {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: rgba(96,165,250,0.6);
+    text-align: right;
+  }
 
-  /* Home side (left column) */
-  .event-home { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
-  .event-home .event-info { text-align:right; }
+  .event-row {
+    display: grid;
+    grid-template-columns: 1fr 48px 1fr;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.1s;
+    gap: 4px;
+  }
+  .event-row:last-child { border-bottom: none; }
+  .event-row:hover { background: rgba(255,255,255,0.025); }
 
-  /* Away side (right column) */
-  .event-away { display:flex; align-items:center; gap:8px; justify-content:flex-start; }
-  .event-away .event-info { text-align:left; }
+  /* Home side — content right-aligned, icon on far right */
+  .event-home-side {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    min-width: 0;
+  }
+  .event-home-side .event-text { text-align: right; min-width: 0; }
 
-  /* Empty placeholder when event is on the other side */
-  .event-side-empty { display:block; }
+  /* Away side — icon on far left, content left-aligned */
+  .event-away-side {
+    display: flex; align-items: center; justify-content: flex-start; gap: 8px;
+    min-width: 0;
+  }
+  .event-away-side .event-text { text-align: left; min-width: 0; }
 
-  .event-icon { font-size:18px; flex-shrink:0; line-height:1; }
-  .event-player { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; color:#fff; letter-spacing:0.02em; }
-  .event-type { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.05em; color:rgba(255,255,255,0.28); margin-top:1px; }
+  .event-empty { display: block; min-width: 0; }
+
+  .event-icon { font-size: 17px; flex-shrink: 0; line-height: 1; }
+  .event-icon.small { font-size: 13px; }
+  .event-player { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:#fff; letter-spacing:0.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .event-label  { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.05em; color:rgba(255,255,255,0.28); margin-top:1px; }
+
+  /* Minute bubble */
+  .event-min-col { display: flex; flex-direction: column; align-items: center; }
+  .event-min-bubble {
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px; line-height: 1;
+    color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 5px; padding: 3px 6px; min-width: 32px; text-align: center;
+  }
+
   .no-events { padding:28px; text-align:center; font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.18); }
 
-  /* Squad lists */
-  .squads { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  @media (max-width:480px) { .squads { grid-template-columns:1fr; } }
-  .squad-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; }
-  .squad-head { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.02); }
-  .squad-team-name { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.04em; color:#fff; }
-  .squad-row { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.03); }
-  .squad-row:last-child { border-bottom:none; }
-  .squad-num { font-family:'Bebas Neue',sans-serif; font-size:16px; color:rgba(255,255,255,0.2); min-width:20px; text-align:center; }
-  .squad-name { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:#fff; flex:1; }
-  .squad-pos { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.06em; color:rgba(255,255,255,0.25); }
+  /* Squad lists — always side by side, no header */
+  .squads {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .squads .squad-col:first-child { border-right: 1px solid rgba(255,255,255,0.06); }
+  .squad-col { min-width: 0; }
+
+  /* Colour bar at top of each column instead of text header */
+  .squad-bar {
+    height: 3px;
+    width: 100%;
+  }
+
+  /* Player rows */
+  .squad-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.12s;
+    text-decoration: none;
+  }
+  .squad-row:last-child { border-bottom: none; }
+  .squad-row:hover { background: rgba(255,255,255,0.04); }
+  .squad-num { display: none; }
+  .squad-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.02em;
+    text-align: center;
+    width: 100%;
+  }
+  .squad-row:hover .squad-name { color: #22c55e; }
+  .squad-pos {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #facc15;
+    background: rgba(234,179,8,0.1);
+    border: 1px solid rgba(234,179,8,0.2);
+    border-radius: 3px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+  }
+  /* Inline event badges on squad rows — centred below name */
+  .squad-badges { display:flex; align-items:center; justify-content:center; gap:3px; flex-wrap:wrap; }
+  .sq-badge {
+    font-size: 12px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+  }
+  .sq-badge-count {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1;
+  }
+  /* 2-yellow-to-red in events timeline */
+  .event-2y { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.05em; color:#f87171; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); border-radius:3px; padding:1px 4px; margin-left:3px; }
 
   /* Skeleton */
   @keyframes shimmer { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
@@ -294,11 +388,38 @@ export default function MatchPage() {
   }
 
   const potmEvent = events.find(e => e.type === 'potm')
-  const matchEvents = events.filter(e => e.type !== 'potm')
+  const rawMatchEvents = events.filter(e => e.type !== 'potm')
   const isLive = match?.status === 'live'
   const isFinished = match?.status === 'finished'
   const homeWin = isFinished && (match?.home_score ?? 0) > (match?.away_score ?? 0)
   const awayWin = isFinished && (match?.away_score ?? 0) > (match?.home_score ?? 0)
+
+  // Build processed events: 2 yellows for same player → 2nd becomes red (2Y)
+  const matchEvents = (() => {
+    const yellowCount: Record<string, number> = {}
+    return rawMatchEvents.map(e => {
+      if (e.type === 'yellow') {
+        yellowCount[e.player_name] = (yellowCount[e.player_name] || 0) + 1
+        if (yellowCount[e.player_name] === 2) {
+          return { ...e, type: 'red', secondYellow: true }
+        }
+      }
+      return { ...e, secondYellow: false }
+    })
+  })()
+
+  // Per-player stats for squad badges
+  const playerStats: Record<string, { goals: number; assists: number; yellows: number; red: boolean }> = {}
+  rawMatchEvents.forEach(e => {
+    const k = e.player_name
+    if (!playerStats[k]) playerStats[k] = { goals: 0, assists: 0, yellows: 0, red: false }
+    if (e.type === 'goal')   playerStats[k].goals++
+    if (e.type === 'assist') playerStats[k].assists++
+    if (e.type === 'yellow') playerStats[k].yellows++
+    if (e.type === 'red')    playerStats[k].red = true
+  })
+  // 2 yellows = red on squad too
+  Object.values(playerStats).forEach(s => { if (s.yellows >= 2) s.red = true })
 
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
@@ -389,42 +510,45 @@ export default function MatchPage() {
                 <div className="section">
                   <div className="section-title">Match Events</div>
                   <div className="events-card">
+                    {/* Column labels */}
+                    <div className="events-header">
+                      <span className="events-header-home">{shortName(match.home_team.name)}</span>
+                      <span className="events-header-min">Min</span>
+                      <span className="events-header-away">{shortName(match.away_team.name)}</span>
+                    </div>
                     {matchEvents.length === 0 ? (
                       <div className="no-events">{isLive ? 'No events yet — kick off!' : 'No events recorded'}</div>
                     ) : (
-                      matchEvents.map(e => {
+                      matchEvents.map((e: any) => {
                         const isHome = e.team_id === match.home_team.id
+                        const icon = e.secondYellow ? '🟨🟥' : eventIcon(e.type)
+                        const label = e.secondYellow ? '2nd Yellow → Red' : eventLabel(e.type)
+                        const iconEl = (
+                          <span className={`event-icon${e.secondYellow ? ' small' : ''}`}>{icon}</span>
+                        )
+                        const textEl = (
+                          <div className="event-text">
+                            <div className="event-player">{e.player_name}</div>
+                            <div className="event-label">{label}</div>
+                          </div>
+                        )
                         return (
                           <div key={e.id} className="event-row">
-                            {/* Left: home event */}
+                            {/* Left — home */}
                             {isHome ? (
-                              <div className="event-home">
-                                <div className="event-info">
-                                  <div className="event-player">{e.player_name}</div>
-                                  <div className="event-type">{eventLabel(e.type)}</div>
-                                </div>
-                                <div className="event-icon">{eventIcon(e.type)}</div>
-                              </div>
+                              <div className="event-home-side">{textEl}{iconEl}</div>
                             ) : (
-                              <div className="event-side-empty" />
+                              <span className="event-empty" />
                             )}
-
-                            {/* Centre: minute */}
-                            <div className="event-min-wrap">
-                              <div className="event-min">{e.minute ?? '—'}&apos;</div>
+                            {/* Centre — minute */}
+                            <div className="event-min-col">
+                              <div className="event-min-bubble">{e.minute ?? '—'}'</div>
                             </div>
-
-                            {/* Right: away event */}
+                            {/* Right — away */}
                             {!isHome ? (
-                              <div className="event-away">
-                                <div className="event-icon">{eventIcon(e.type)}</div>
-                                <div className="event-info">
-                                  <div className="event-player">{e.player_name}</div>
-                                  <div className="event-type">{eventLabel(e.type)}</div>
-                                </div>
-                              </div>
+                              <div className="event-away-side">{iconEl}{textEl}</div>
                             ) : (
-                              <div className="event-side-empty" />
+                              <span className="event-empty" />
                             )}
                           </div>
                         )
@@ -434,27 +558,45 @@ export default function MatchPage() {
                 </div>
               )}
 
-              {/* Squads */}
+              {/* Squads — side by side, colour bar header */}
               {(homePlayers.length > 0 || awayPlayers.length > 0) && (
                 <div className="section">
                   <div className="section-title">Squads</div>
                   <div className="squads">
-                    {[{ team: match.home_team, players: homePlayers }, { team: match.away_team, players: awayPlayers }].map(({ team, players }) => (
-                      <div key={team.id} className="squad-card">
-                        <div className="squad-head">
-                          <Link href={`/teams/${team.id}`} style={{ textDecoration:'none' }}>
-                            <div className="squad-team-name">{shortName(team.name)}</div>
-                          </Link>
-                        </div>
-                        {players.map(p => (
-                          <Link key={p.id} href={`/players/${p.id}`} style={{ textDecoration:'none', display:'block' }}>
-                            <div className="squad-row" style={{ cursor:'pointer' }}>
-                              <div className="squad-num">{p.shirt_number ?? '—'}</div>
-                              <div className="squad-name">{p.name}</div>
-                              <div className="squad-pos">{p.position === 'GK' ? 'GK' : ''}</div>
-                            </div>
-                          </Link>
-                        ))}
+                    {([
+                      { team: match.home_team, players: homePlayers, color: '#22c55e' },
+                      { team: match.away_team, players: awayPlayers, color: '#60a5fa' },
+                    ] as { team: any; players: any[]; color: string }[]).map(({ team, players, color }) => (
+                      <div key={team.id} className="squad-col">
+                        <div className="squad-bar" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                        {players.map(p => {
+                          const ps = playerStats[p.name]
+                          const yellowsToShow = ps ? (ps.yellows >= 2 ? 1 : ps.yellows) : 0
+                          return (
+                            <Link key={p.id} href={`/players/${p.id}`} style={{ textDecoration:'none', display:'block' }}>
+                              <div className="squad-row">
+                                <div className="squad-name">{p.name}</div>
+                                {p.position === 'GK' && <div className="squad-pos">GK</div>}
+                                {ps && (
+                                  <div className="squad-badges">
+                                    {ps.goals > 0 && (
+                                      <span className="sq-badge">
+                                        ⚽{ps.goals > 1 && <span className="sq-badge-count">×{ps.goals}</span>}
+                                      </span>
+                                    )}
+                                    {ps.assists > 0 && (
+                                      <span className="sq-badge">
+                                        🅰️{ps.assists > 1 && <span className="sq-badge-count">×{ps.assists}</span>}
+                                      </span>
+                                    )}
+                                    {yellowsToShow > 0 && <span className="sq-badge">🟨</span>}
+                                    {ps.red && <span className="sq-badge">🟥</span>}
+                                  </div>
+                                )}
+                              </div>
+                            </Link>
+                          )
+                        })}
                       </div>
                     ))}
                   </div>
